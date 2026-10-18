@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SecurePass{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{{ url_for('main.index') }}" aria-label="SecurePass home">
+        <span class="brand-mark" aria-hidden="true">SP</span>
+        <span class="brand-name">SecurePass</span>
+      </a>
+
+      <nav class="main-nav" aria-label="Main">
+        <a href="{{ url_for('flights.search') }}">Explore Flights</a>
+        <a href="{{ url_for('main.index') }}#destinations">Featured Destinations</a>
+        {# Phase 3: show "My Bookings" for logged-in users and "Admin" for admins only (SR5). #}
+      </nav>
+
+      <div class="auth-links">
+        <a class="btn btn-ghost" href="{{ url_for('main.login') }}">Log in</a>
+        <a class="btn btn-solid" href="{{ url_for('main.register') }}">Register</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>SecurePass is a final-year project. Demo data only; no real bookings or payments.</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</body>
+</html>

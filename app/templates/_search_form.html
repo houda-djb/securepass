@@ -1,0 +1,50 @@
+{# Shared by the homepage and the flights page. Needs: airports, values, errors #}
+<form class="search-card" action="{{ url_for('flights.search') }}" method="get" novalidate>
+  <datalist id="airport-list">
+    {% for a in airports %}<option value="{{ a.code }}">{{ a.city }}, {{ a.country }}</option>{% endfor %}
+  </datalist>
+
+  <div class="field">
+    <label for="origin">Origin</label>
+    <input id="origin" name="origin" type="text" inputmode="text" maxlength="3" list="airport-list"
+           pattern="[A-Za-z]{3}" placeholder="e.g., JFK" autocomplete="off" required
+           value="{{ values.get('origin', '') }}"
+           {% if errors.origin %}aria-invalid="true" aria-describedby="origin-error"{% endif %}>
+    {% if errors.origin %}<p class="field-error" id="origin-error">{{ errors.origin }}</p>{% endif %}
+  </div>
+
+  <div class="field">
+    <label for="destination">Destination</label>
+    <input id="destination" name="destination" type="text" inputmode="text" maxlength="3" list="airport-list"
+           pattern="[A-Za-z]{3}" placeholder="e.g., LHR" autocomplete="off" required
+           value="{{ values.get('destination', '') }}"
+           {% if errors.destination %}aria-invalid="true" aria-describedby="destination-error"{% endif %}>
+    {% if errors.destination %}<p class="field-error" id="destination-error">{{ errors.destination }}</p>{% endif %}
+  </div>
+
+  <div class="field">
+    <label for="departure">Departure date</label>
+    <input id="departure" name="departure" type="date" required
+           value="{{ values.get('departure', '') }}"
+           {% if errors.departure %}aria-invalid="true" aria-describedby="departure-error"{% endif %}>
+    {% if errors.departure %}<p class="field-error" id="departure-error">{{ errors.departure }}</p>{% endif %}
+  </div>
+
+  <div class="field">
+    <label for="return">Return date <span class="optional">(optional)</span></label>
+    <input id="return" name="return" type="date"
+           value="{{ values.get('return', '') }}"
+           {% if errors['return'] %}aria-invalid="true" aria-describedby="return-error"{% endif %}>
+    {% if errors['return'] %}<p class="field-error" id="return-error">{{ errors['return'] }}</p>{% endif %}
+  </div>
+
+  <div class="field field-narrow">
+    <label for="passengers">Passengers</label>
+    <input id="passengers" name="passengers" type="number" min="1" max="9" required
+           value="{{ values.get('passengers') or '1' }}"
+           {% if errors.passengers %}aria-invalid="true" aria-describedby="passengers-error"{% endif %}>
+    {% if errors.passengers %}<p class="field-error" id="passengers-error">{{ errors.passengers }}</p>{% endif %}
+  </div>
+
+  <button class="btn btn-solid btn-wide" type="submit" name="search" value="1">Search available flights</button>
+</form>

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}SecurePass: Explore the world, securely{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <img class="hero-wing" src="{{ url_for('static', filename='img/wing.svg') }}" alt="" aria-hidden="true">
+
+  <div class="container hero-inner">
+    <h1>Explore the World, Securely.</h1>
+    <p class="hero-sub">A seamless flight booking experience, built on trust and clarity.</p>
+
+    {% include "_search_form.html" %}
+  </div>
+</section>
+
+<section class="destinations container" id="destinations">
+  <h2>Featured Destinations</h2>
+  <div class="dest-grid">
+    {% for d in featured %}
+    {% set photo = photo_url(d.slug) %}
+    <article class="dest-card">
+      <div class="dest-art dest-{{ d.slug }}" role="img" aria-label="{{ d.city }}">
+        {% if photo %}<img src="{{ photo }}" alt="" loading="lazy">{% endif %}
+        <span class="dest-code">{{ d.code }}</span>
+      </div>
+      <h3>{{ d.city }}</h3>
+      <p>{{ d.blurb }}</p>
+      <a class="dest-link" href="{{ url_for('flights.search', destination=d.code) }}">View flights to {{ d.city }}</a>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

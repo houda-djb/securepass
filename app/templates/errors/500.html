@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong | SecurePass{% endblock %}
+{% block content %}
+<section class="container narrow-page">
+  <h1>Something went wrong on our side</h1>
+  <p>Please try again in a moment. Nothing was changed on your account.</p>
+  <a class="btn btn-solid" href="{{ url_for('main.index') }}">Back to home</a>
+</section>
+{% endblock %}

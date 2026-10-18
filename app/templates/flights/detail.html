@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ flight.flight_no }}: {{ flight.origin.city }} to {{ flight.destination.city }} | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container detail">
+  <a class="back-link" href="{{ url_for('flights.search') }}">&larr; Back to search</a>
+
+  <h1>{{ flight.origin.city }} to {{ flight.destination.city }}</h1>
+  <p class="detail-sub">Flight {{ flight.flight_no }} &middot; {{ flight.departs_at.strftime('%A %d %B %Y') }}</p>
+
+  <div class="detail-card">
+    <div class="detail-leg">
+      <span class="time">{{ flight.departs_at.strftime('%H:%M') }}</span>
+      <span>{{ flight.origin.name }}, {{ flight.origin.city }} ({{ flight.origin.code }})</span>
+    </div>
+    <div class="detail-duration">{{ flight.duration_display }}</div>
+    <div class="detail-leg">
+      <span class="time">{{ flight.arrives_at.strftime('%H:%M') }}</span>
+      <span>{{ flight.destination.name }}, {{ flight.destination.city }} ({{ flight.destination.code }})</span>
+    </div>
+  </div>
+
+  <dl class="detail-facts">
+    <div><dt>Price</dt><dd>{{ flight.price_display }} per passenger</dd></div>
+    <div><dt>Seats left</dt><dd>{{ flight.seats_available }}</dd></div>
+    <div><dt>Departure time</dt><dd>{{ flight.departs_at.strftime('%H:%M') }} (local time)</dd></div>
+  </dl>
+
+  <p class="detail-note">Booking opens in Phase 4. You will need an account to reserve seats.</p>
+  <a class="btn btn-solid" href="{{ url_for('main.login') }}">Log in to book</a>
+</section>
+{% endblock %}

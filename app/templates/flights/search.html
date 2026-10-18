@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Search flights | SecurePass{% endblock %}
+
+{% block content %}
+<section class="results-head">
+  <div class="container">
+    <h1>Find your flight</h1>
+    {% include "_search_form.html" %}
+  </div>
+</section>
+
+<section class="container results">
+  {% if errors %}
+    <div class="error-summary" role="alert">
+      <strong>Please check your search:</strong>
+      <ul>
+        {% for message in errors.values() %}<li>{{ message }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% elif outbound is not none %}
+    {% set legs = [("Outbound", query.origin, query.destination, query.departure, outbound)] %}
+    {% if returning is not none %}
+      {% set legs = legs + [("Return", query.destination, query.origin, query.return_date, returning)] %}
+    {% endif %}
+
+    {% for title, from_code, to_code, day, flights in legs %}
+      <h2 class="leg-title">{{ title }}: {{ from_code }} to {{ to_code }}
+        <span class="leg-date">{{ day.strftime('%A %d %B %Y') }}</span></h2>
+
+      {% if flights %}
+        <ul class="flight-list">
+          {% for f in flights %}
+          <li class="flight-card">
+            <div class="flight-times">
+              <span class="time">{{ f.departs_at.strftime('%H:%M') }}</span>
+              <span class="arrow" aria-hidden="true">&rarr;</span>
+              <span class="time">{{ f.arrives_at.strftime('%H:%M') }}</span>
+            </div>
+            <div class="flight-meta">
+              <strong>{{ f.origin.city }} to {{ f.destination.city }}</strong>
+              <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ f.seats_available }} seats left</span>
+            </div>
+            <div class="flight-price">
+              <span class="price">{{ f.price_display }}</span>
+              <span class="per">per passenger</span>
+            </div>
+            <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id) }}">View details</a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">No flights match this search. Try another date or fewer passengers.</p>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p class="empty">Enter your airports and dates above to see available flights.</p>
+  {% endif %}
+</section>
+{% endblock %}
