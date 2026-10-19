@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Booking {{ booking.reference }} | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container detail">
+  <a class="back-link" href="{{ url_for('bookings.index') }}">&larr; All my bookings</a>
+
+  <h1>Booking <span class="ref">{{ booking.reference }}</span>
+    <span class="badge badge-{{ booking.status }}">{{ booking.status|capitalize }}</span></h1>
+  <p class="detail-sub">
+    {{ booking.flight.origin.city }} to {{ booking.flight.destination.city }} &middot;
+    {{ booking.flight.departs_at.strftime('%A %d %B %Y') }}
+  </p>
+
+  <div class="detail-card">
+    <div class="detail-leg">
+      <span class="time">{{ booking.flight.departs_at.strftime('%H:%M') }}</span>
+      <span>{{ booking.flight.origin.name }}, {{ booking.flight.origin.city }} ({{ booking.flight.origin.code }})</span>
+    </div>
+    <div class="detail-duration">{{ booking.flight.flight_no }} &middot; {{ booking.flight.duration_display }}</div>
+    <div class="detail-leg">
+      <span class="time">{{ booking.flight.arrives_at.strftime('%H:%M') }}</span>
+      <span>{{ booking.flight.destination.name }}, {{ booking.flight.destination.city }} ({{ booking.flight.destination.code }})</span>
+    </div>
+  </div>
+
+  <dl class="detail-facts">
+    <div><dt>Passengers</dt><dd>{{ booking.passengers }}</dd></div>
+    <div><dt>Total (demo)</dt><dd class="total">{{ booking.total_display }}</dd></div>
+    <div><dt>Booked on</dt><dd>{{ booking.created_at.strftime('%d %b %Y, %H:%M') }} UTC</dd></div>
+  </dl>
+
+  {% if booking.can_cancel %}
+    <form method="post" action="{{ url_for('bookings.cancel', reference=booking.reference) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-danger" type="submit">Cancel this booking</button>
+    </form>
+  {% elif booking.is_cancelled %}
+    <p class="detail-note">This booking was cancelled{% if booking.cancelled_at %} on {{ booking.cancelled_at.strftime('%d %b %Y, %H:%M') }} UTC{% endif %}. Its seats were released.</p>
+  {% else %}
+    <p class="detail-note">This flight has already departed, so the booking can't be changed.</p>
+  {% endif %}
+</section>
+{% endblock %}

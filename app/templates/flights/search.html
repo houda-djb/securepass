@@ -44,7 +44,7 @@
               <span class="price">{{ f.price_display }}</span>
               <span class="per">per passenger</span>
             </div>
-            <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id) }}">View details</a>
+            <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id, passengers=query.passengers) }}">View details</a>
           </li>
           {% endfor %}
         </ul>

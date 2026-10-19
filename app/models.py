@@ -54,9 +54,11 @@ class Flight(db.Model):
     @property
     def price_display(self) -> str:
         return f"${self.price_cents / 100:,.2f}"
-    
-        @property
 
+    @property
+    def has_departed(self) -> bool:
+        # Flight times are plain local times in this demo, so compare with local time.
+        return self.departs_at <= datetime.now()
 
     @property
     def duration_display(self) -> str:
@@ -104,3 +106,41 @@ class AuditLog(db.Model):
     ip = db.Column(db.String(45), nullable=False, default="")
     detail = db.Column(db.String(200), nullable=False, default="")
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+
+
+class Booking(db.Model):
+    """A reservation of seats on one flight by one user (FR9-FR12)."""
+
+    __tablename__ = "bookings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    # FR10: random public code like "K7M2QX9P". The numeric id is never shown to users.
+    reference = db.Column(db.String(8), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    flight_id = db.Column(db.Integer, db.ForeignKey("flights.id"), nullable=False)
+    passengers = db.Column(db.Integer, nullable=False)
+    total_cents = db.Column(db.Integer, nullable=False)  # worked out on the server, never sent by the browser
+    status = db.Column(db.String(10), nullable=False, default="confirmed")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship("User")
+    flight = db.relationship("Flight")
+
+    __table_args__ = (
+        db.CheckConstraint("passengers BETWEEN 1 AND 9", name="ck_booking_passengers"),
+        db.CheckConstraint("status IN ('confirmed', 'cancelled')", name="ck_booking_status"),
+        db.CheckConstraint("total_cents >= 0", name="ck_booking_total"),
+    )
+
+    @property
+    def total_display(self) -> str:
+        return f"${self.total_cents / 100:,.2f}"
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.status == "cancelled"
+
+    @property
+    def can_cancel(self) -> bool:
+        return self.status == "confirmed" and not self.flight.has_departed
