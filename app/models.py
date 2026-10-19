@@ -1,4 +1,14 @@
+from datetime import datetime, timezone
+
+from flask_login import UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from app.extensions import db
+
+
+def utcnow() -> datetime:
+    """Current UTC time as a plain (naive) datetime, which is how SQLite stores it."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Airport(db.Model):
@@ -46,6 +56,91 @@ class Flight(db.Model):
         return f"${self.price_cents / 100:,.2f}"
 
     @property
+    def has_departed(self) -> bool:
+        # Flight times are plain local times in this demo, so compare with local time.
+        return self.departs_at <= datetime.now()
+
+    @property
     def duration_display(self) -> str:
         minutes = int((self.arrives_at - self.departs_at).total_seconds() // 60)
         return f"{minutes // 60}h {minutes % 60:02d}m"
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(254), unique=True, nullable=False)  # always stored lowercase
+    password_hash = db.Column(db.String(255), nullable=False)       # SR1: never the password itself
+    role = db.Column(db.String(10), nullable=False, default="user")  # FR4: "user" or "admin"
+    failed_logins = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    __table_args__ = (db.CheckConstraint("role IN ('user', 'admin')", name="ck_user_role"),)
+
+    def set_password(self, password: str) -> None:
+        # Werkzeug's default is scrypt with a random salt per password.
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
+
+    def is_locked(self, now: datetime | None = None) -> bool:
+        now = now or utcnow()
+        return self.locked_until is not None and self.locked_until > now
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == "admin"
+
+
+class AuditLog(db.Model):
+    """SR13: security-relevant events. Phase 5 turns this into the security dashboard."""
+
+    __tablename__ = "audit_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    event_type = db.Column(db.String(40), nullable=False, index=True)
+    ip = db.Column(db.String(45), nullable=False, default="")
+    detail = db.Column(db.String(200), nullable=False, default="")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+
+
+class Booking(db.Model):
+    """A reservation of seats on one flight by one user (FR9-FR12)."""
+
+    __tablename__ = "bookings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    # FR10: random public code like "K7M2QX9P". The numeric id is never shown to users.
+    reference = db.Column(db.String(8), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    flight_id = db.Column(db.Integer, db.ForeignKey("flights.id"), nullable=False)
+    passengers = db.Column(db.Integer, nullable=False)
+    total_cents = db.Column(db.Integer, nullable=False)  # worked out on the server, never sent by the browser
+    status = db.Column(db.String(10), nullable=False, default="confirmed")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship("User")
+    flight = db.relationship("Flight")
+
+    __table_args__ = (
+        db.CheckConstraint("passengers BETWEEN 1 AND 9", name="ck_booking_passengers"),
+        db.CheckConstraint("status IN ('confirmed', 'cancelled')", name="ck_booking_status"),
+        db.CheckConstraint("total_cents >= 0", name="ck_booking_total"),
+    )
+
+    @property
+    def total_display(self) -> str:
+        return f"${self.total_cents / 100:,.2f}"
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.status == "cancelled"
+
+    @property
+    def can_cancel(self) -> bool:
+        return self.status == "confirmed" and not self.flight.has_departed

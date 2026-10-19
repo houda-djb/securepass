@@ -26,7 +26,23 @@
     <div><dt>Departure time</dt><dd>{{ flight.departs_at.strftime('%H:%M') }} (local time)</dd></div>
   </dl>
 
-  <p class="detail-note">Booking opens in Phase 4. You will need an account to reserve seats.</p>
-  <a class="btn btn-solid" href="{{ url_for('main.login') }}">Log in to book</a>
+  {% if not current_user.is_authenticated %}
+    <p class="detail-note">You need an account to reserve seats.</p>
+    <a class="btn btn-solid" href="{{ url_for('auth.login', next=request.path) }}">Log in to book</a>
+  {% elif flight.has_departed %}
+    <p class="detail-note">This flight has already departed.</p>
+  {% elif flight.seats_available == 0 %}
+    <p class="detail-note">This flight is sold out.</p>
+  {% else %}
+    <form class="book-form" action="{{ url_for('bookings.new', flight_id=flight.id) }}" method="get">
+      <label for="passengers">Passengers</label>
+      <select id="passengers" name="passengers">
+        {% for n in range(1, ([flight.seats_available, 9] | min) + 1) %}
+          <option value="{{ n }}" {% if n == passengers %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-solid" type="submit">Continue to booking</button>
+    </form>
+  {% endif %}
 </section>
 {% endblock %}

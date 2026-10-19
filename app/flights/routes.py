@@ -6,7 +6,7 @@ from sqlalchemy.orm import joinedload
 
 from app.extensions import db
 from app.flights import bp
-from app.flights.validation import validate_search
+from app.flights.validation import MAX_PASSENGERS, validate_search
 from app.models import Airport, Flight
 
 FORM_FIELDS = ("origin", "destination", "departure", "return", "passengers")
@@ -65,4 +65,7 @@ def detail(flight_id: int):
     if flight_id > 2_147_483_647:  # larger than any real id; avoids a database overflow
         abort(404)
     flight = db.get_or_404(Flight, flight_id)
-    return render_template("flights/detail.html", flight=flight)
+
+    raw = request.args.get("passengers", "1")
+    passengers = int(raw) if raw.isascii() and raw.isdigit() and 1 <= int(raw) <= MAX_PASSENGERS else 1
+    return render_template("flights/detail.html", flight=flight, passengers=passengers)

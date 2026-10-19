@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Confirm your booking | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container detail">
+  <a class="back-link" href="{{ url_for('flights.detail', flight_id=flight.id, passengers=passengers) }}">&larr; Back to flight</a>
+  <h1>Confirm your booking</h1>
+
+  <div class="detail-card">
+    <div class="detail-leg">
+      <span class="time">{{ flight.departs_at.strftime('%H:%M') }}</span>
+      <span>{{ flight.origin.city }} ({{ flight.origin.code }})</span>
+    </div>
+    <div class="detail-duration">{{ flight.flight_no }} &middot; {{ flight.duration_display }}</div>
+    <div class="detail-leg">
+      <span class="time">{{ flight.arrives_at.strftime('%H:%M') }}</span>
+      <span>{{ flight.destination.city }} ({{ flight.destination.code }})</span>
+    </div>
+  </div>
+  <p class="detail-sub">{{ flight.departs_at.strftime('%A %d %B %Y') }}</p>
+
+  <dl class="detail-facts">
+    <div><dt>Passengers</dt><dd>{{ passengers }}</dd></div>
+    <div><dt>Price per passenger</dt><dd>{{ flight.price_display }}</dd></div>
+    <div><dt>Total</dt><dd class="total">${{ '{:,.2f}'.format(total_cents / 100) }}</dd></div>
+  </dl>
+
+  {% if problem %}
+    <div class="error-summary" role="alert">{{ problem }}</div>
+    <p><a class="btn btn-ghost" href="{{ url_for('flights.search') }}">Search other flights</a></p>
+  {% else %}
+    <div class="demo-note">
+      <strong>Demo payment.</strong> No real payment is taken and no card details are collected.
+    </div>
+    <form method="post" action="{{ url_for('bookings.new', flight_id=flight.id) }}">
+      {{ form.hidden_tag() }}
+      <button class="btn btn-solid" type="submit">Pay ${{ '{:,.2f}'.format(total_cents / 100) }} (demo) and book</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

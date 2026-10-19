@@ -22,17 +22,38 @@
       <nav class="main-nav" aria-label="Main">
         <a href="{{ url_for('flights.search') }}">Explore Flights</a>
         <a href="{{ url_for('main.index') }}#destinations">Featured Destinations</a>
-        {# Phase 3: show "My Bookings" for logged-in users and "Admin" for admins only (SR5). #}
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('bookings.index') }}">My Bookings</a>
+          {% if current_user.is_admin %}<a href="{{ url_for('admin.index') }}">Admin</a>{% endif %}
+        {% endif %}
       </nav>
 
       <div class="auth-links">
-        <a class="btn btn-ghost" href="{{ url_for('main.login') }}">Log in</a>
-        <a class="btn btn-solid" href="{{ url_for('main.register') }}">Register</a>
+        {% if current_user.is_authenticated %}
+          <span class="user-email">{{ current_user.email }}</span>
+          <form class="logout-form" action="{{ url_for('auth.logout') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost" type="submit">Log out</button>
+          </form>
+        {% else %}
+          <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Log in</a>
+          <a class="btn btn-solid" href="{{ url_for('auth.register') }}">Register</a>
+        {% endif %}
       </div>
     </div>
   </header>
 
   <main id="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="container flash-wrap">
+          {% for category, message in messages %}
+            <p class="flash flash-{{ category }}" role="status">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
   </main>
 

@@ -15,6 +15,13 @@ class Config:
     # A relative sqlite path is created inside the instance/ folder (git-ignored).
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///securepass.db")
 
+    # SR7: rate limiting for sensitive endpoints (in-memory is fine for one server).
+    RATELIMIT_STORAGE_URI = "memory://"
+
+    # FR3: account lockout policy.
+    MAX_FAILED_LOGINS = 5
+    LOCKOUT_MINUTES = 15
+
     # SR8: hardened session cookies (Secure is switched on in ProductionConfig).
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
@@ -32,6 +39,9 @@ class TestingConfig(Config):
     TESTING = True
     SECRET_KEY = "testing-secret"
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    # Switched off so most tests stay simple. Dedicated tests turn them back on.
+    WTF_CSRF_ENABLED = False
+    RATELIMIT_ENABLED = False
 
 
 class ProductionConfig(Config):
