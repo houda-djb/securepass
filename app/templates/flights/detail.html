@@ -26,7 +26,11 @@
     <div><dt>Departure time</dt><dd>{{ flight.departs_at.strftime('%H:%M') }} (local time)</dd></div>
   </dl>
 
-  <p class="detail-note">Booking opens in Phase 4. You will need an account to reserve seats.</p>
-  <a class="btn btn-solid" href="{{ url_for('main.login') }}">Log in to book</a>
+    {% if current_user.is_authenticated %}
+    <p class="detail-note">Booking opens in Phase 4. You are logged in and ready to reserve seats.</p>
+  {% else %}
+    <p class="detail-note">Booking opens in Phase 4. You will need an account to reserve seats.</p>
+    <a class="btn btn-solid" href="{{ url_for('auth.login', next=request.path) }}">Log in to book</a>
+  {% endif %}
 </section>
 {% endblock %}

@@ -1,4 +1,14 @@
+from datetime import datetime, timezone
+
+from flask_login import UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from app.extensions import db
+
+
+def utcnow() -> datetime:
+    """Current UTC time as a plain (naive) datetime, which is how SQLite stores it."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Airport(db.Model):
@@ -44,8 +54,53 @@ class Flight(db.Model):
     @property
     def price_display(self) -> str:
         return f"${self.price_cents / 100:,.2f}"
+    
+        @property
+
 
     @property
     def duration_display(self) -> str:
         minutes = int((self.arrives_at - self.departs_at).total_seconds() // 60)
         return f"{minutes // 60}h {minutes % 60:02d}m"
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(254), unique=True, nullable=False)  # always stored lowercase
+    password_hash = db.Column(db.String(255), nullable=False)       # SR1: never the password itself
+    role = db.Column(db.String(10), nullable=False, default="user")  # FR4: "user" or "admin"
+    failed_logins = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    __table_args__ = (db.CheckConstraint("role IN ('user', 'admin')", name="ck_user_role"),)
+
+    def set_password(self, password: str) -> None:
+        # Werkzeug's default is scrypt with a random salt per password.
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
+
+    def is_locked(self, now: datetime | None = None) -> bool:
+        now = now or utcnow()
+        return self.locked_until is not None and self.locked_until > now
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == "admin"
+
+
+class AuditLog(db.Model):
+    """SR13: security-relevant events. Phase 5 turns this into the security dashboard."""
+
+    __tablename__ = "audit_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    event_type = db.Column(db.String(40), nullable=False, index=True)
+    ip = db.Column(db.String(45), nullable=False, default="")
+    detail = db.Column(db.String(200), nullable=False, default="")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)

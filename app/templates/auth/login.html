@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Log in | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container auth-page">
+  <div class="auth-card">
+    <h1>Log in</h1>
+    <p class="auth-sub">Welcome back.</p>
+
+    {% if error %}<div class="error-summary" role="alert">{{ error }}</div>{% endif %}
+
+    <form method="post" action="{{ url_for('auth.login', next=next_url) if next_url else url_for('auth.login') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" maxlength="254" required
+               value="{{ form.email.data or '' }}"
+               {% if form.email.errors %}aria-invalid="true" aria-describedby="email-error"{% endif %}>
+        {% if form.email.errors %}<p class="field-error" id="email-error">{{ form.email.errors[0] }}</p>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required
+               {% if form.password.errors %}aria-invalid="true" aria-describedby="password-error"{% endif %}>
+        {% if form.password.errors %}<p class="field-error" id="password-error">{{ form.password.errors[0] }}</p>{% endif %}
+      </div>
+
+      <button class="btn btn-solid btn-block" type="submit">Log in</button>
+    </form>
+
+    <p class="auth-switch">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+  </div>
+</section>
+{% endblock %}

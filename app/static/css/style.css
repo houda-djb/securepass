@@ -230,3 +230,34 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.12; margin: 0; }
   .detail-duration { text-align: left; }
   .detail-facts { grid-template-columns: 1fr; }
 }
+
+
+/* ================= Phase 3 additions ================= */
+
+/* Navbar when logged in */
+.auth-links { align-items: center; }
+.user-email { font-size: .88rem; color: var(--muted); max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logout-form { margin: 0; }
+
+/* Flash messages */
+.flash-wrap { padding-top: 1rem; display: grid; gap: .5rem; }
+.flash { margin: 0; padding: .7rem 1rem; border-radius: 8px; font-size: .92rem; border: 1px solid var(--line); background: #fff; }
+.flash-success { background: #eaf6ee; border-color: #b9dcc4; color: #1e5a32; }
+.flash-info { background: #eaf0fa; border-color: #c4d3ee; color: #1b3a6b; }
+
+/* Login and register pages */
+.auth-page { padding-block: 3rem 4.5rem; display: flex; justify-content: center; }
+.auth-card {
+  width: min(100%, 440px); background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 2rem; box-shadow: 0 10px 30px rgba(27, 42, 73, .08);
+}
+.auth-card h1 { font-size: 1.9rem; }
+.auth-card form { display: grid; gap: 1rem; margin-top: 1.2rem; }
+.auth-card .error-summary { margin-top: 1rem; max-width: none; font-size: .9rem; }
+.auth-sub { color: var(--muted); margin: .4rem 0 0; }
+.field-hint { margin: 0; font-size: .78rem; color: var(--muted); }
+.btn-block { width: 100%; padding-block: .75rem; }
+.auth-switch { margin: 1.3rem 0 0; font-size: .92rem; text-align: center; color: var(--muted); }
+.auth-switch a { color: var(--navy); font-weight: 500; }
+
+@media (max-width: 900px) { .user-email { display: none; } }
