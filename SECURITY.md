@@ -7,8 +7,9 @@ customers, but vulnerabilities are still taken seriously.
 
 Please do **not** open a public issue for a security problem.
 
-Use GitHub's private reporting instead: open the **Security** tab of this repository and choose
-**Report a vulnerability**. Include the steps to reproduce it and what you expected to happen.
+Contact the maintainer privately instead (GitHub: **houda-djb**), or use the **Report a
+vulnerability** button in the repository's **Security** tab if it is available. Include the
+steps to reproduce the problem and what you expected to happen.
 
 ## What is protected
 
@@ -21,7 +22,7 @@ Use GitHub's private reporting instead: open the **Security** tab of this reposi
 | Data | Parameterized queries only (SQLAlchemy); database constraints as a second line of defence |
 | Bookings | Seats claimed with one atomic update, so the last seat can never be sold twice |
 | Monitoring | Audit log of security events, shown on the admin dashboard |
-| Pipeline | Tests with a coverage gate, Bandit, pip-audit, CodeQL, Dependabot |
+| Pipeline | Tests with a coverage gate, Bandit, pip-audit, Dependabot |
 
 ## Known limits (see the project report, "Future work")
 

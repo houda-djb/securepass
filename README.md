@@ -1,7 +1,7 @@
 # SecurePass
 
 A secure flight booking website (final-year project). Flask + SQLite + HTML/CSS/JavaScript,
-with a DevSecOps pipeline: GitHub Actions, Bandit, pip-audit, CodeQL and Dependabot.
+with a DevSecOps pipeline: GitHub Actions, Bandit, pip-audit and Dependabot.
 
 ![CI](https://github.com/houda-djb/securepass/actions/workflows/ci.yml/badge.svg)
 
@@ -61,7 +61,7 @@ pip-audit -r requirements.txt
 | SR12 | Custom error pages without internals | `app/templates/errors/` |
 | SR13 | Audit log of security events | `app/security.py`, dashboard |
 | FR13 | One atomic UPDATE claims seats | `app/bookings/service.py` |
-| TR5, TR6 | Tests, Bandit, pip-audit, CodeQL on every pull request | `.github/workflows/` |
+| TR5, TR6 | Tests, Bandit, pip-audit on every pull request | `.github/workflows/` |
 
 See [SECURITY.md](SECURITY.md) for the reporting policy and known limits.
 
@@ -79,7 +79,7 @@ app/
   templates/ static/
 config.py            settings; secrets come from the environment
 tests/               pytest suite (unit, security and pipeline guard tests)
-.github/             CI, CodeQL, Dependabot
+.github/             CI workflow, Dependabot
 ```
 
 ## Git workflow (one branch per phase)

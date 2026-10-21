@@ -48,12 +48,6 @@ def test_ci_keeps_reports_even_when_a_gate_fails():
     assert "upload-artifact" in ci and "if: always()" in ci
 
 
-def test_codeql_is_configured():
-    codeql = read(".github/workflows/codeql.yml")
-    assert "github/codeql-action/analyze" in codeql and "languages: python" in codeql
-    assert "Analyze (python)" in codeql
-
-
 # ---------------- Safe workflow habits ----------------
 
 def test_no_workflow_uses_dangerous_settings():
