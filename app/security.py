@@ -20,16 +20,28 @@ def audit(event_type: str, user=None, detail: str = "") -> None:
     db.session.commit()
 
 
+def ensure_role(*roles: str):
+    """SR5: the server decides who may open a page. Hiding a link is not enough.
+
+    Returns None when the visitor may continue, a redirect to the login page for
+    anonymous visitors, or stops the request with a 403 (and logs it) for the wrong role.
+    """
+    if not current_user.is_authenticated:
+        return current_app.login_manager.unauthorized()
+    if current_user.role not in roles:
+        audit("access_denied", current_user, request.path)
+        abort(403)
+    return None
+
+
 def role_required(*roles: str):
-    """SR5: the server decides who may open a page. Hiding a link is not enough."""
+    """Decorator version of ensure_role for single views."""
     def decorator(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
-            if not current_user.is_authenticated:
-                return current_app.login_manager.unauthorized()
-            if current_user.role not in roles:
-                audit("access_denied", current_user, request.path)
-                abort(403)
+            denied = ensure_role(*roles)
+            if denied is not None:
+                return denied
             return view(*args, **kwargs)
         return wrapped
     return decorator

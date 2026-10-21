@@ -1,0 +1,8 @@
+{% macro field(f, hint=None) %}
+<div class="field">
+  {{ f.label }}
+  {% if f.errors %}{{ f(**{"aria-invalid": "true"}) }}{% else %}{{ f() }}{% endif %}
+  {% if hint %}<p class="field-hint">{{ hint }}</p>{% endif %}
+  {% for message in f.errors %}<p class="field-error">{{ message }}</p>{% endfor %}
+</div>
+{% endmacro %}

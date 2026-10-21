@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "admin/_macros.html" import field %}
+{% block title %}{{ 'Edit' if flight else 'Add' }} flight | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container admin-page">
+  <h1>Admin</h1>
+  {% set active = 'flights' %}{% include "admin/_nav.html" %}
+
+  <div class="auth-card form-card">
+    <h2>{{ 'Edit flight ' ~ flight.flight_no if flight else 'Add a flight' }}</h2>
+
+    {% if problem %}<div class="error-summary" role="alert">{{ problem }}</div>{% endif %}
+
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.flight_no, hint="For example SP104.") }}
+      <div class="form-row">
+        {{ field(form.origin) }}
+        {{ field(form.destination) }}
+      </div>
+      <div class="form-row">
+        {{ field(form.departs_at) }}
+        {{ field(form.arrives_at) }}
+      </div>
+      <div class="form-row">
+        {{ field(form.price) }}
+        {{ field(form.seats_available, hint="Seats still free to book.") }}
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-solid" type="submit">{{ 'Save changes' if flight else 'Add flight' }}</button>
+        <a class="btn btn-ghost" href="{{ url_for('admin.flights') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
