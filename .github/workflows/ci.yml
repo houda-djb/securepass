@@ -2,30 +2,60 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
+# Least privilege: the pipeline can only read the repository.
 permissions:
   contents: read
+
+# A new push cancels the older run of the same branch, so results are never stale.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-and-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements*.txt
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: python -m pip install -r requirements-dev.txt
 
-      - name: Tests
-        run: pytest -q
+      - name: Tests with coverage gate (fails below 90%)
+        run: pytest -q --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=90
 
-      - name: Bandit (static security analysis)
+      - name: Bandit (static security analysis, fails on medium or high findings)
         run: bandit -r app config.py -ll
 
-      - name: pip-audit (dependency vulnerabilities)
+      - name: pip-audit (known vulnerabilities in dependencies)
         run: pip-audit -r requirements.txt
+
+      # Reports are kept even when a gate above failed, so the cause is easy to read.
+      - name: Write scan reports
+        if: always()
+        run: |
+          bandit -r app config.py -f json -o bandit-report.json --exit-zero || true
+          pip-audit -r requirements.txt -f json -o pip-audit-report.json || true
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            pip-audit-report.json
+            coverage.xml
+          if-no-files-found: ignore
+          retention-days: 30
