@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Security dashboard | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container admin-page">
+  <h1>Admin</h1>
+  {% set active = 'dashboard' %}{% include "admin/_nav.html" %}
+
+  <div class="stat-grid">
+    <div class="stat {% if stats.failed_logins %}stat-warn{% endif %}">
+      <span class="stat-number">{{ stats.failed_logins }}</span>
+      <span class="stat-label">Failed logins, last 24 hours</span>
+    </div>
+    <div class="stat {% if locked %}stat-bad{% endif %}">
+      <span class="stat-number">{{ locked|length }}</span>
+      <span class="stat-label">Locked accounts right now</span>
+    </div>
+    <div class="stat {% if stats.access_denied %}stat-warn{% endif %}">
+      <span class="stat-number">{{ stats.access_denied }}</span>
+      <span class="stat-label">Access denied, last 24 hours</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">{{ stats.bookings }}</span>
+      <span class="stat-label">Bookings made, last 24 hours</span>
+    </div>
+  </div>
+
+  <h2>Locked accounts</h2>
+  {% if locked %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Email</th><th>Failed attempts</th><th>Locked until (UTC)</th><th></th></tr></thead>
+        <tbody>
+          {% for user in locked %}
+          <tr>
+            <td>{{ user.email }}</td>
+            <td>{{ user.failed_logins }}</td>
+            <td>{{ user.locked_until.strftime('%d %b %Y, %H:%M') }}</td>
+            <td>
+              <form method="post" action="{{ url_for('admin.unlock_user', user_id=user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-ghost btn-small" type="submit">Unlock</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">No accounts are locked.</p>
+  {% endif %}
+
+  <h2>Bookings per day <span class="muted">(last 14 days, UTC)</span></h2>
+  <div class="chart-card">
+    <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img"
+         aria-label="Bar chart of bookings made per day over the last 14 days">
+      <line x1="0" y1="{{ chart.baseline }}" x2="{{ chart.width }}" y2="{{ chart.baseline }}" class="chart-axis"/>
+      {% for bar in chart.bars %}
+        <rect x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.w }}" height="{{ bar.h }}" rx="3" class="chart-bar">
+          <title>{{ bar.label }}: {{ bar.count }} booking{{ '' if bar.count == 1 else 's' }}</title>
+        </rect>
+        {% if bar.count %}<text x="{{ bar.cx }}" y="{{ bar.y - 5 }}" class="chart-value" text-anchor="middle">{{ bar.count }}</text>{% endif %}
+        {% if bar.show_label %}<text x="{{ bar.cx }}" y="{{ chart.label_y }}" class="chart-label" text-anchor="middle">{{ bar.label }}</text>{% endif %}
+      {% endfor %}
+    </svg>
+  </div>
+
+  <h2>Latest security scan</h2>
+  {% if scan %}
+    <div class="scan-grid">
+      <div class="scan-card">
+        <strong>Bandit (code)</strong>
+        {% if scan.bandit.error %}
+          <p class="scan-error">{{ scan.bandit.error }}</p>
+        {% else %}
+          <p class="{{ 'scan-ok' if not (scan.bandit.high or scan.bandit.medium) else 'scan-bad' }}">
+            {{ scan.bandit.high }} high &middot; {{ scan.bandit.medium }} medium &middot; {{ scan.bandit.low }} low
+          </p>
+        {% endif %}
+      </div>
+      <div class="scan-card">
+        <strong>pip-audit (dependencies)</strong>
+        {% if scan.pip_audit.error %}
+          <p class="scan-error">{{ scan.pip_audit.error }}</p>
+        {% else %}
+          <p class="{{ 'scan-ok' if not scan.pip_audit.vulnerable_packages else 'scan-bad' }}">
+            {{ scan.pip_audit.vulnerable_packages }} vulnerable of {{ scan.pip_audit.packages_checked }} packages
+          </p>
+        {% endif %}
+      </div>
+    </div>
+    <p class="muted">Scanned {{ scan.ran_at }}. Run <code>flask --app wsgi security-scan</code> to refresh.</p>
+  {% else %}
+    <p class="empty">No scan recorded yet. Run <code>flask --app wsgi security-scan</code> in the terminal.</p>
+  {% endif %}
+
+  <h2>Recent security events</h2>
+  <form class="filter-form" method="get" action="{{ url_for('admin.index') }}">
+    <label for="type">Show</label>
+    <select id="type" name="type">
+      <option value="">All events</option>
+      {% for t in event_types %}<option value="{{ t }}" {% if t == chosen %}selected{% endif %}>{{ t.replace('_', ' ') }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-ghost btn-small" type="submit">Filter</button>
+  </form>
+  {% if events %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Time (UTC)</th><th>Event</th><th>User</th><th>IP</th><th>Detail</th></tr></thead>
+        <tbody>
+          {% for entry, email in events %}
+          <tr>
+            <td class="nowrap">{{ entry.created_at.strftime('%d %b %H:%M:%S') }}</td>
+            <td><span class="badge badge-{{ event_styles.get(entry.event_type, 'neutral') }}">{{ entry.event_type.replace('_', ' ') }}</span></td>
+            <td>{{ email or '-' }}</td>
+            <td class="nowrap">{{ entry.ip or '-' }}</td>
+            <td>{{ entry.detail }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">No events to show.</p>
+  {% endif %}
+</section>
+{% endblock %}

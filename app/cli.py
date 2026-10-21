@@ -3,6 +3,7 @@ from email_validator import EmailNotValidError, validate_email
 from flask.cli import with_appcontext
 from sqlalchemy import select
 
+from app.admin.scans import run_scans, save_summary
 from app.auth.passwords import password_problems
 from app.extensions import db
 from app.models import Airport, User
@@ -55,3 +56,18 @@ def create_admin_command(email: str, password: str) -> None:
     db.session.add(admin)
     db.session.commit()
     click.echo(f"Admin account created for {email}.")
+
+
+@click.command("security-scan")
+@with_appcontext
+def security_scan_command() -> None:
+    """Run Bandit and pip-audit and save a summary for the admin dashboard."""
+    click.echo("Running Bandit and pip-audit (this can take a minute)...")
+    summary = run_scans()
+    save_summary(summary)
+    bandit, audit = summary["bandit"], summary["pip_audit"]
+    click.echo("Bandit:    " + (bandit["error"] or
+               f"{bandit['high']} high, {bandit['medium']} medium, {bandit['low']} low"))
+    click.echo("pip-audit: " + (audit["error"] or
+               f"{audit['vulnerable_packages']} vulnerable of {audit['packages_checked']} packages"))
+    click.echo("Summary saved. Open the admin dashboard to see it.")
