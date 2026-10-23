@@ -16,7 +16,8 @@ steps to reproduce the problem and what you expected to happen.
 | Area | Control |
 |---|---|
 | Passwords | Salted scrypt hashes, 10+ characters, lockout after 5 failures, rate limiting |
-| Sessions | HttpOnly, SameSite=Lax cookies; new session on login; 30 minute lifetime |
+| Sessions | HttpOnly, SameSite=Lax cookies; new session on login; 30 minute lifetime; Secure `__Host-` cookie in production |
+| Browser | Content-Security-Policy (own site and Google Fonts only), HSTS, no framing, no caching of private pages |
 | Forms | CSRF token on every POST; server-side validation of all input |
 | Access | Server-side role checks on every admin route; bookings are private to their owner |
 | Data | Parameterized queries only (SQLAlchemy); database constraints as a second line of defence |

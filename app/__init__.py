@@ -2,9 +2,13 @@ import os
 from pathlib import Path
 
 from flask import Flask, render_template, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.extensions import csrf, db, limiter, login_manager
+from app.security_headers import init_security_headers
 from config import CONFIGS
+
+MIN_PRODUCTION_KEY_LENGTH = 32
 
 
 def create_app(config_name: str | None = None, overrides: dict | None = None) -> Flask:
@@ -18,6 +22,13 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
 
     if not app.config.get("SECRET_KEY"):
         raise RuntimeError("SECRET_KEY is not set. Add it to your environment or .env file.")
+    if config_name == "production" and len(app.config["SECRET_KEY"]) < MIN_PRODUCTION_KEY_LENGTH:
+        raise RuntimeError("In production SECRET_KEY must be a random value of at least "
+                           f"{MIN_PRODUCTION_KEY_LENGTH} characters.")
+
+    if app.config["PROXY_HOPS"]:  # believe X-Forwarded-* only from the proxies we were told about
+        hops = app.config["PROXY_HOPS"]
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=hops, x_proto=hops, x_host=hops)
 
     db.init_app(app)
     csrf.init_app(app)
@@ -27,6 +38,7 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
     login_manager.login_message = "Please log in to see that page."
     login_manager.login_message_category = "info"
     login_manager.session_protection = "strong"
+    init_security_headers(app)
 
     from app import models
     from app.admin import bp as admin_bp
@@ -68,6 +80,10 @@ def register_template_helpers(app: Flask) -> None:
 
 def register_error_handlers(app: Flask) -> None:
     # SR12: friendly error pages that never reveal stack traces or internals.
+    @app.errorhandler(400)
+    def bad_request(_error):  # includes a missing or expired CSRF token
+        return render_template("errors/400.html"), 400
+
     @app.errorhandler(403)
     def forbidden(_error):
         return render_template("errors/403.html"), 403
@@ -75,6 +91,10 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(404)
     def not_found(_error):
         return render_template("errors/404.html"), 404
+
+    @app.errorhandler(413)
+    def too_large(_error):
+        return render_template("errors/413.html"), 413
 
     @app.errorhandler(429)
     def too_many_requests(_error):

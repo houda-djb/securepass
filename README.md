@@ -55,31 +55,55 @@ pip-audit -r requirements.txt
 | SR5 | Role checks on the server, admin guard on the whole blueprint | `app/security.py`, `app/admin/__init__.py` |
 | SR6 | Bookings looked up by user and reference | `app/bookings/routes.py` |
 | SR7 | Login and registration rate limits | `app/auth/routes.py` |
-| SR8 | HttpOnly, SameSite cookies, 30 minute sessions | `config.py` |
+| SR8 | Secure, HttpOnly, SameSite `__Host-` cookie in production, 30 minute sessions | `config.py` |
+| SR9 | Content-Security-Policy, HSTS, frame, referrer and permissions headers | `app/security_headers.py` |
 | SR10 | Auto-escaped templates, no `\|safe` | `app/templates/` |
-| SR11 | Secrets from environment variables | `config.py` |
+| SR11 | Secrets from environment variables, weak production key refused | `config.py`, `app/__init__.py` |
 | SR12 | Custom error pages without internals | `app/templates/errors/` |
 | SR13 | Audit log of security events | `app/security.py`, dashboard |
 | FR13 | One atomic UPDATE claims seats | `app/bookings/service.py` |
 | TR5, TR6 | Tests, Bandit, pip-audit on every pull request | `.github/workflows/` |
 
-See [SECURITY.md](SECURITY.md) for the reporting policy and known limits.
+## Documentation
+
+| Document | What it is for |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Diagrams: system, data model, safe booking, delivery pipeline, production setup |
+| [docs/OWASP_TOP10.md](docs/OWASP_TOP10.md) | The OWASP Top 10 checklist: controls, proof and what is not covered |
+| [docs/TRACEABILITY.md](docs/TRACEABILITY.md) | Every requirement mapped to how it is met and the test that proves it |
+| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | A 10 minute demo and likely questions |
+| [SECURITY.md](SECURITY.md) | Reporting policy and known limits |
+
+Tests check these documents, so a renamed test or a missing requirement fails the build.
+
+## Running in production
+
+| Setting | Value |
+|---|---|
+| `FLASK_ENV` | `production` (HTTPS redirect, HSTS, Secure cookies) |
+| `SECRET_KEY` | Random, at least 32 characters. The app refuses to start otherwise. |
+| `PROXY_HOPS` | Number of reverse proxies in front of the app, for example `1`. Leave `0` if none. |
+
+Use a production server (Waitress on Windows, Gunicorn on Linux) behind a proxy that handles TLS.
+`flask run` is for development only. Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Project layout
 
 ```
 app/
-  __init__.py        create_app() factory, error handlers
-  models.py          Airport, Flight, User, AuditLog, Booking
-  security.py        audit log, role checks, safe redirects
-  auth/              register, login, logout, password rules
-  flights/           search, results, details
-  bookings/          checkout, My Bookings, cancel (rules in service.py)
-  admin/             dashboard, flight management, scan summary
+  __init__.py          create_app() factory, error handlers, production checks
+  models.py            Airport, Flight, User, AuditLog, Booking
+  security.py          audit log, role checks, safe redirects
+  security_headers.py  Content-Security-Policy and the other browser headers
+  auth/                register, login, logout, password rules
+  flights/             search, results, details
+  bookings/            checkout, My Bookings, cancel (rules in service.py)
+  admin/               dashboard, flight management, scan summary
   templates/ static/
-config.py            settings; secrets come from the environment
-tests/               pytest suite (unit, security and pipeline guard tests)
-.github/             CI workflow, Dependabot
+config.py              settings; secrets come from the environment
+docs/                  architecture, OWASP checklist, traceability, demo script
+tests/                 unit, security, pipeline and documentation tests
+.github/               CI workflow, Dependabot
 ```
 
 ## Git workflow (one branch per phase)
@@ -101,7 +125,13 @@ git push -u origin phase-7-hardening   # then open a pull request; merge when CI
 | 4 | Secure bookings | Done |
 | 5 | Audit log and security dashboard | Done |
 | 6 | CI hardening | Done |
-| 7 | Security headers, final write-up | Next |
+| 7 | Security headers, production hardening, documentation | Done |
+
+## Future work
+
+Two-factor authentication, email verification and password reset, a real payment provider,
+PostgreSQL with migrations, alerting on the audit log, a Docker image, and a second static
+analysis tool such as Semgrep.
 
 ## Adding real destination photos
 
