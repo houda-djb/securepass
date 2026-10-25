@@ -34,7 +34,7 @@ Tests are named so you can run any of them: `pytest -k <name>`.
 | Parameterized queries only (SQLAlchemy) | `test_sql_injection_attempt_is_harmless`, `test_flight_search_rejects_odd_input_politely` |
 | Filter values are checked against a fixed list before use | `test_unknown_filter_values_are_ignored_not_executed` |
 | Output is escaped, so injected HTML is shown as text | `test_script_in_search_is_escaped`, `test_event_details_are_escaped_on_the_dashboard` |
-| The Content-Security-Policy would block an injected script anyway | `test_csp_only_allows_this_site_and_google_fonts`, `test_templates_work_with_the_strict_csp` |
+| The Content-Security-Policy would block an injected script anyway | `test_csp_only_allows_this_site`, `test_templates_work_with_the_strict_csp` |
 | The only subprocess calls use a fixed argument list | `test_bandit_gate_rejects_insecure_code_and_accepts_safe_code` |
 
 ## A04 Insecure Design
@@ -106,5 +106,5 @@ Tests are named so you can run any of them: `pytest -k <name>`.
 ## A10 Server-Side Request Forgery
 
 SecurePass never fetches a URL on a visitor's behalf, so there is nothing to forge. The only outgoing
-requests are the browser loading Google Fonts, and the command-line scan, which runs Bandit and
+requests are the command-line scan, which runs Bandit and
 pip-audit with fixed arguments.

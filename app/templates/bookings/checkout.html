@@ -3,6 +3,7 @@
 
 {% block content %}
 <section class="container detail">
+  {% set step = 3 %}{% include "_stepper.html" %}
   <a class="back-link" href="{{ url_for('flights.detail', flight_id=flight.id, passengers=passengers) }}">&larr; Back to flight</a>
   <h1>Confirm your booking</h1>
 

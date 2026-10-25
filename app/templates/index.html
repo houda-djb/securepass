@@ -3,13 +3,27 @@
 
 {% block content %}
 <section class="hero">
-  <img class="hero-wing" src="{{ url_for('static', filename='img/wing.svg') }}" alt="" aria-hidden="true">
-
   <div class="container hero-inner">
+    <p class="eyebrow">Secure flight booking</p>
     <h1>Explore the World, Securely.</h1>
     <p class="hero-sub">A seamless flight booking experience, built on trust and clarity.</p>
 
     {% include "_search_form.html" %}
+
+    <ul class="trust-row">
+      <li>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+        Protected accounts
+      </li>
+      <li>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
+        Safe bookings
+      </li>
+      <li>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        Every event audited
+      </li>
+    </ul>
   </div>
 </section>
 
@@ -22,12 +36,69 @@
       <div class="dest-art dest-{{ d.slug }}" role="img" aria-label="{{ d.city }}">
         {% if photo %}<img src="{{ photo }}" alt="" loading="lazy">{% endif %}
         <span class="dest-code">{{ d.code }}</span>
+        {% if d.code in from_prices %}<span class="price-chip">From {{ '${:,.0f}'.format(from_prices[d.code] / 100) }}</span>{% endif %}
       </div>
       <h3>{{ d.city }}</h3>
       <p>{{ d.blurb }}</p>
       <a class="dest-link" href="{{ url_for('flights.search', destination=d.code) }}">View flights to {{ d.city }}</a>
     </article>
     {% endfor %}
+  </div>
+</section>
+
+{% if more %}
+<section class="more container" aria-labelledby="more-title">
+  <div class="section-head">
+    <h2 id="more-title">More places to go</h2>
+    <a class="view-all" href="{{ url_for('flights.search') }}">Search all flights &rarr;</a>
+  </div>
+  <ul class="pop-grid">
+    {% for a in more %}
+    {% set photo = photo_url(a.slug) %}
+    <li>
+      <a class="pop-card" href="{{ url_for('flights.search', destination=a.code) }}">
+        <span class="pop-art pop-{{ a.slug }}" aria-hidden="true">
+          {% if photo %}<img src="{{ photo }}" alt="" loading="lazy">{% endif %}
+        </span>
+        <span class="pop-city">{{ a.city }}</span>
+        <span class="pop-from">From <strong>{{ '${:,.0f}'.format(from_prices[a.code] / 100) }}</strong></span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="how container" aria-labelledby="how-title">
+  <h2 class="section-title" id="how-title">How booking works</h2>
+  <p class="section-lead">Four clear steps from search to boarding pass, with nothing hidden.</p>
+  <ol class="steps">
+    <li><h3>Search</h3><p>Pick your airports, dates and passengers. Results come back quickly, with every price shown up front.</p></li>
+    <li><h3>Choose</h3><p>Compare times, duration, price and seats left, then open the flight details.</p></li>
+    <li><h3>Confirm</h3><p>Review the total and finish with a demo payment. No card details are ever collected.</p></li>
+    <li><h3>Manage</h3><p>Find every booking in your account, each with a private reference code, and cancel from there.</p></li>
+  </ol>
+</section>
+
+<section class="features container" aria-labelledby="security-title">
+  <h2 class="section-title" id="security-title">Security you can see</h2>
+  <p class="section-lead">The same care that goes into your trip goes into protecting your account and your bookings.</p>
+  <div class="feature-grid">
+    <article class="feature">
+      <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></div>
+      <h3>Protected accounts</h3>
+      <p>Passwords are stored as salted hashes, and repeated wrong guesses lock the account for 15 minutes.</p>
+    </article>
+    <article class="feature">
+      <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <h3>Safe bookings</h3>
+      <p>Every action is protected against forged requests, and seats are reserved in one step so none are sold twice.</p>
+    </article>
+    <article class="feature">
+      <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <h3>Always watched</h3>
+      <p>Logins, bookings and denied access are written to an audit log that administrators can review.</p>
+    </article>
   </div>
 </section>
 {% endblock %}

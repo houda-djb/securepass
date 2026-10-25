@@ -3,8 +3,8 @@
 The most important one is the Content-Security-Policy (CSP). It tells the browser which
 places a page may load things from, so even if an attacker managed to inject HTML, the
 browser would refuse to run their script. This site needs very little:
-  - its own scripts, styles and images ('self'),
-  - Google Fonts (stylesheet from fonts.googleapis.com, font files from fonts.gstatic.com).
+  - its own scripts, styles, fonts and images ('self').
+Since v2 the Inter font is served from static/fonts, so no third party is trusted at all.
 There are no inline scripts or styles anywhere, so 'unsafe-inline' is never needed.
 """
 from flask import Flask, request
@@ -14,8 +14,8 @@ from flask_talisman import Talisman
 CSP = {
     "default-src": "'self'",
     "script-src": "'self'",
-    "style-src": ["'self'", "https://fonts.googleapis.com"],
-    "font-src": ["'self'", "https://fonts.gstatic.com"],
+    "style-src": "'self'",
+    "font-src": "'self'",
     "img-src": "'self'",
     "object-src": "'none'",         # no Flash, Java or other plugins
     "base-uri": "'self'",           # an injected <base> tag can't redirect relative links

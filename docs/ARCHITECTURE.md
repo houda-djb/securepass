@@ -116,7 +116,7 @@ The price is never read from the browser: the server works out the total from th
 1. **Transport.** In production, HTTP is redirected to HTTPS and HSTS tells browsers to
    stay on HTTPS. The session cookie is `Secure`, `HttpOnly`, `SameSite=Lax` and named
    `__Host-session`.
-2. **Browser rules.** The Content-Security-Policy allows only this site and Google Fonts. Framing,
+2. **Browser rules.** The Content-Security-Policy allows only this site; fonts, styles and scripts are all served from its own static folder. Framing,
    plugins and injected `<base>` tags are blocked. Private pages are sent with `Cache-Control: no-store`.
 3. **Request checks.** Every POST needs a CSRF token. Login and registration are rate limited.
    Request bodies are limited to 100 KB.

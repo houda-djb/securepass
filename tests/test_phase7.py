@@ -73,12 +73,12 @@ def test_error_pages_carry_the_headers_too(app, client, users):
     assert forbidden.status_code == 403 and "Content-Security-Policy" in forbidden.headers
 
 
-def test_csp_only_allows_this_site_and_google_fonts(client):
+def test_csp_only_allows_this_site(client):
     csp = csp_of(client.get("/"))
     assert csp["default-src"] == ["'self'"]
     assert csp["script-src"] == ["'self'"]                        # no inline script, no other site
-    assert csp["style-src"] == ["'self'", "https://fonts.googleapis.com"]
-    assert csp["font-src"] == ["'self'", "https://fonts.gstatic.com"]
+    assert csp["style-src"] == ["'self'"]
+    assert csp["font-src"] == ["'self'"]
     assert csp["img-src"] == ["'self'"]
     assert csp["object-src"] == ["'none'"]
     assert csp["base-uri"] == ["'self'"] and csp["form-action"] == ["'self'"]
@@ -99,7 +99,7 @@ def test_templates_work_with_the_strict_csp():
 
 
 def test_templates_load_nothing_from_unexpected_sites():
-    allowed = {"fonts.googleapis.com", "fonts.gstatic.com"}
+    allowed = set()  # since v2 the Inter font is self-hosted, so nothing loads from other sites
     for template in (ROOT / "app" / "templates").rglob("*.html"):
         for host in re.findall(r"https?://([^/\"'\s]+)", template.read_text(encoding="utf-8")):
             assert host in allowed, f"{template.name} loads from {host}"

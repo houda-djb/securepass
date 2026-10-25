@@ -1,0 +1,12 @@
+{# Booking progress bar. Needs: step (1 to 4). #}
+<ol class="stepper" aria-label="Booking progress">
+  {% for label in ["Search", "Choose flight", "Review & pay", "Confirmation"] %}
+  {% set n = loop.index %}
+  <li class="{{ 'is-done' if n < step else ('is-current' if n == step else '') }}" {% if n == step %}aria-current="step"{% endif %}>
+    <span class="step-dot">
+      {% if n < step %}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>{% else %}{{ n }}{% endif %}
+    </span>
+    <span class="step-label">{{ label }}</span>
+  </li>
+  {% endfor %}
+</ol>
