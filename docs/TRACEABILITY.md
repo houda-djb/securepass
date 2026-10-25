@@ -41,7 +41,7 @@ the evidence is a screenshot or a setting you can show, not an automated test.
 | SR6 | Users reach only their own bookings | Lookup by user and reference | `test_booking_page_is_private_to_its_owner` |
 | SR7 | Rate-limited login | Flask-Limiter | `test_login_attempts_are_rate_limited` |
 | SR8 | Secure session cookies, expiring sessions | Config and `__Host-` cookie name | `test_session_cookie_is_http_only_and_same_site`, `test_production_session_cookie_is_locked_down` |
-| SR9 | Security headers: CSP, HSTS, frame and type options | Flask-Talisman | `test_security_headers_are_on_every_response`, `test_csp_only_allows_this_site_and_google_fonts`, `test_production_sends_hsts_over_https` |
+| SR9 | Security headers: CSP, HSTS, frame and type options | Flask-Talisman | `test_security_headers_are_on_every_response`, `test_csp_only_allows_this_site`, `test_production_sends_hsts_over_https` |
 | SR10 | Auto-escaped templates, nothing marked safe | Jinja defaults | `test_script_in_search_is_escaped`, `test_event_details_are_escaped_on_the_dashboard` |
 | SR11 | Secrets from the environment, never committed | `config.py`, `.gitignore` | `test_missing_secret_key_is_refused`, `test_secrets_and_databases_are_never_committed` |
 | SR12 | Error pages that reveal nothing | Custom 400, 403, 404, 413, 429 and 500 pages | `test_404_page_does_not_leak_details`, `test_an_unexpected_error_shows_a_safe_500_page` |

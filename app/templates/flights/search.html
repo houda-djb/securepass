@@ -11,6 +11,7 @@
 
 <section class="container results">
   {% if errors %}
+    {% set step = 1 %}{% include "_stepper.html" %}
     <div class="error-summary" role="alert">
       <strong>Please check your search:</strong>
       <ul>
@@ -18,41 +19,98 @@
       </ul>
     </div>
   {% elif outbound is not none %}
+    {% set step = 2 %}{% include "_stepper.html" %}
     {% set legs = [("Outbound", query.origin, query.destination, query.departure, outbound)] %}
     {% if returning is not none %}
       {% set legs = legs + [("Return", query.destination, query.origin, query.return_date, returning)] %}
     {% endif %}
 
+    {# Price range for the filter sidebar, worked out from the flights actually shown. #}
+    {% set ns = namespace(lo=none, hi=none, count=0) %}
     {% for title, from_code, to_code, day, flights in legs %}
-      <h2 class="leg-title">{{ title }}: {{ from_code }} to {{ to_code }}
-        <span class="leg-date">{{ day.strftime('%A %d %B %Y') }}</span></h2>
-
-      {% if flights %}
-        <ul class="flight-list">
-          {% for f in flights %}
-          <li class="flight-card">
-            <div class="flight-times">
-              <span class="time">{{ f.departs_at.strftime('%H:%M') }}</span>
-              <span class="arrow" aria-hidden="true">&rarr;</span>
-              <span class="time">{{ f.arrives_at.strftime('%H:%M') }}</span>
-            </div>
-            <div class="flight-meta">
-              <strong>{{ f.origin.city }} to {{ f.destination.city }}</strong>
-              <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ f.seats_available }} seats left</span>
-            </div>
-            <div class="flight-price">
-              <span class="price">{{ f.price_display }}</span>
-              <span class="per">per passenger</span>
-            </div>
-            <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id, passengers=query.passengers) }}">View details</a>
-          </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="empty">No flights match this search. Try another date or fewer passengers.</p>
-      {% endif %}
+      {% for f in flights %}
+        {% set ns.count = ns.count + 1 %}
+        {% if ns.lo is none or f.price_cents < ns.lo %}{% set ns.lo = f.price_cents %}{% endif %}
+        {% if ns.hi is none or f.price_cents > ns.hi %}{% set ns.hi = f.price_cents %}{% endif %}
+      {% endfor %}
     {% endfor %}
+
+    <div class="results-layout">
+      {% if ns.count %}
+      {# Hidden until main.js turns it on: the filters work on the flights already on the page. #}
+      <aside class="filters" aria-label="Filter and sort results" data-filters hidden>
+        <h2 class="filters-title">Filters</h2>
+
+        <div class="filter-group">
+          <label for="sort-by">Sort by</label>
+          <select id="sort-by" data-sort>
+            <option value="time">Departure time</option>
+            <option value="price">Lowest price</option>
+            <option value="duration">Shortest duration</option>
+          </select>
+        </div>
+
+        {% set lo = ns.lo // 100 %}{% set hi = (ns.hi + 99) // 100 %}
+        {% if hi > lo %}
+        <div class="filter-group">
+          <label for="price-max">Max price <output for="price-max" data-price-out>${{ hi }}</output></label>
+          <input id="price-max" type="range" min="{{ lo }}" max="{{ hi }}" step="1" value="{{ hi }}" data-price-max>
+          <div class="range-ends"><span>${{ lo }}</span><span>${{ hi }}</span></div>
+        </div>
+        {% endif %}
+
+        <fieldset class="filter-group">
+          <legend>Departure time</legend>
+          <label class="check"><input type="checkbox" value="morning" data-band checked> Morning <span>5am to 12pm</span></label>
+          <label class="check"><input type="checkbox" value="afternoon" data-band checked> Afternoon <span>12pm to 6pm</span></label>
+          <label class="check"><input type="checkbox" value="evening" data-band checked> Evening <span>6pm to 10pm</span></label>
+          <label class="check"><input type="checkbox" value="night" data-band checked> Night <span>10pm to 5am</span></label>
+        </fieldset>
+
+        <button class="btn btn-ghost btn-small" type="button" data-reset>Reset filters</button>
+        <p class="filters-count" aria-live="polite" data-count></p>
+      </aside>
+      {% endif %}
+
+      <div class="results-main">
+        {% for title, from_code, to_code, day, flights in legs %}
+          <h2 class="leg-title">{{ title }}: {{ from_code }} to {{ to_code }}
+            <span class="leg-date">{{ day.strftime('%A %d %B %Y') }}</span></h2>
+
+          {% if flights %}
+            <ul class="flight-list" data-leg>
+              {% for f in flights %}
+              <li class="flight-card" data-price="{{ f.price_cents }}" data-depart="{{ f.departs_at.strftime('%H%M') }}" data-duration="{{ ((f.arrives_at - f.departs_at).total_seconds() // 60)|int }}">
+                <div class="flight-times">
+                  <span class="carrier-badge" aria-hidden="true">SP</span>
+                  <span class="time">{{ f.departs_at.strftime('%H:%M') }}</span>
+                  <span class="arrow" aria-hidden="true">&rarr;</span>
+                  <span class="time">{{ f.arrives_at.strftime('%H:%M') }}</span>
+                </div>
+                <div class="flight-meta">
+                  <strong>{{ f.origin.city }} to {{ f.destination.city }}</strong>
+                  <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ f.seats_available }} seats left</span>
+                  <span class="flight-tags">
+                    <span class="pill">Non-stop</span>
+                    {% if f.seats_available <= 10 %}<span class="pill pill-warn">Almost full</span>{% endif %}
+                  </span>
+                </div>
+                <div class="flight-price">
+                  <span class="price">{{ f.price_display }}</span>
+                  <span class="per">per passenger</span>
+                </div>
+                <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id, passengers=query.passengers) }}">View details</a>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty">No flights match this search. Try another date or fewer passengers.</p>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
   {% else %}
+    {% set step = 1 %}{% include "_stepper.html" %}
     <p class="empty">Enter your airports and dates above to see available flights.</p>
   {% endif %}
 </section>
