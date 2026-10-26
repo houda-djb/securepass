@@ -126,6 +126,9 @@ class Booking(db.Model):
 
     user = db.relationship("User")
     flight = db.relationship("Flight")
+    # The people travelling (names only). `passengers` above is just their count.
+    travellers = db.relationship("Passenger", back_populates="booking",
+                                 order_by="Passenger.position", cascade="all, delete-orphan")
 
     __table_args__ = (
         db.CheckConstraint("passengers BETWEEN 1 AND 9", name="ck_booking_passengers"),
@@ -144,3 +147,41 @@ class Booking(db.Model):
     @property
     def can_cancel(self) -> bool:
         return self.status == "confirmed" and not self.flight.has_departed
+
+
+class Passenger(db.Model):
+    """One traveller on a booking. Names only: no passport or card data is ever stored."""
+
+    __tablename__ = "passengers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey("bookings.id"), nullable=False, index=True)
+    position = db.Column(db.Integer, nullable=False)  # 1 = lead passenger
+    first_name = db.Column(db.String(40), nullable=False)
+    last_name = db.Column(db.String(40), nullable=False)
+
+    booking = db.relationship("Booking", back_populates="travellers")
+    seat = db.relationship("SeatAssignment", back_populates="passenger", uselist=False,
+                           cascade="all, delete-orphan")
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+
+
+class SeatAssignment(db.Model):
+    """The seat one passenger has chosen on a flight (for example "12A")."""
+
+    __tablename__ = "seat_assignments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    passenger_id = db.Column(db.Integer, db.ForeignKey("passengers.id"), unique=True, nullable=False)
+    booking_id = db.Column(db.Integer, db.ForeignKey("bookings.id"), nullable=False, index=True)
+    flight_id = db.Column(db.Integer, db.ForeignKey("flights.id"), nullable=False)
+    label = db.Column(db.String(3), nullable=False)
+
+    passenger = db.relationship("Passenger", back_populates="seat")
+
+    # The database itself refuses to give one seat to two people, even in a race (NFR5).
+    __table_args__ = (db.UniqueConstraint("flight_id", "label", name="uq_seat_per_flight"),)
