@@ -117,7 +117,7 @@
       wrap.appendChild(toggle);
 
       // Strength hints only where a new password is being chosen. The server rules decide.
-      if (input.id === "password" && input.getAttribute("autocomplete") === "new-password") {
+      if ((input.id === "password" || input.id === "new_password") && input.getAttribute("autocomplete") === "new-password") {
         addStrengthMeter(input, wrap);
       }
     });
@@ -246,6 +246,80 @@
     apply();
   }
 
+  // ------------------------------------------------------------------ seat map
+  // The lists next to the map are the real form fields; the map is a faster way to fill them.
+  function initSeatMap() {
+    var map = $("[data-seatmap]");
+    if (!map) { return; }
+    var selects = $$("[data-seat-select]");
+    var seatButtons = $$("[data-seat]", map);
+    var rows = $$(".seat-passenger");
+    var fallback = $("[data-seatmap-fallback]");
+    if (!selects.length || !seatButtons.length) { return; }
+
+    var active = selects[0].getAttribute("data-seat-select");
+
+    function seatOf(position) {
+      var select = $('[data-seat-select="' + position + '"]');
+      return select ? select.value : "";
+    }
+    function paint() {
+      var holders = {};
+      selects.forEach(function (select) {
+        if (select.value) { holders[select.value] = select.getAttribute("data-seat-select"); }
+      });
+      seatButtons.forEach(function (button) {
+        var label = button.getAttribute("data-seat");
+        var holder = holders[label];
+        button.classList.toggle("is-selected", Boolean(holder));
+        button.setAttribute("aria-pressed", String(Boolean(holder)));
+        button.textContent = holder || "";
+      });
+      rows.forEach(function (row) {
+        row.classList.toggle("is-active", row.getAttribute("data-passenger") === active);
+      });
+    }
+    function setSeat(position, label) {
+      selects.forEach(function (select) {   // one seat, one passenger
+        if (label && select.value === label) { select.value = ""; }
+      });
+      var select = $('[data-seat-select="' + position + '"]');
+      if (select) { select.value = label; }
+    }
+
+    seatButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        var label = button.getAttribute("data-seat");
+        setSeat(active, seatOf(active) === label ? "" : label);
+        // Move on to the next passenger who has no seat yet.
+        var next = selects.filter(function (select) { return !select.value; })[0];
+        if (next) { active = next.getAttribute("data-seat-select"); }
+        paint();
+      });
+    });
+    selects.forEach(function (select) {
+      select.addEventListener("change", function () {
+        var position = select.getAttribute("data-seat-select");
+        var label = select.value;
+        active = position;
+        setSeat(position, label);
+        paint();
+      });
+      select.addEventListener("focus", function () { active = select.getAttribute("data-seat-select"); paint(); });
+    });
+    rows.forEach(function (row) {
+      row.addEventListener("click", function (event) {
+        if (event.target.tagName === "SELECT") { return; }
+        active = row.getAttribute("data-passenger");
+        paint();
+      });
+    });
+
+    map.hidden = false;
+    if (fallback) { fallback.hidden = true; }
+    paint();
+  }
+
   // ------------------------------------------------------------------ header shadow
   function initHeader() {
     var header = $(".site-header");
@@ -255,7 +329,7 @@
     onScroll();
   }
 
-  [initSearchForm, initPasswords, initFlash, initFilters, initHeader].forEach(function (setup) {
+  [initSearchForm, initPasswords, initFlash, initFilters, initSeatMap, initHeader].forEach(function (setup) {
     try { setup(); } catch (error) {
       // One failing enhancement must never take the others (or the page) down with it.
       if (window.console) { console.error(error); }

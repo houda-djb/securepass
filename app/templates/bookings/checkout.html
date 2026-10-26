@@ -30,11 +30,44 @@
     <div class="error-summary" role="alert">{{ problem }}</div>
     <p><a class="btn btn-ghost" href="{{ url_for('flights.search') }}">Search other flights</a></p>
   {% else %}
-    <div class="demo-note">
-      <strong>Demo payment.</strong> No real payment is taken and no card details are collected.
-    </div>
-    <form method="post" action="{{ url_for('bookings.new', flight_id=flight.id) }}">
+    <form method="post" action="{{ url_for('bookings.new', flight_id=flight.id) }}" novalidate>
       {{ form.hidden_tag() }}
+
+      {% if name_errors %}
+        <div class="error-summary" role="alert">Please check the passenger names below.</div>
+      {% endif %}
+      <fieldset class="passenger-set">
+        <legend>Passenger details</legend>
+        <p class="field-hint">Enter each name as it appears on the travel document. Names only: no passport or card details are collected.</p>
+        {% for n in range(1, passengers + 1) %}
+        {% set first = 'first_name_' ~ n %}{% set last = 'last_name_' ~ n %}
+        <div class="passenger-card">
+          <h3>Passenger {{ n }}{% if n == 1 %} <span class="badge badge-neutral">Lead</span>{% endif %}</h3>
+          <div class="passenger-grid">
+            <div class="field">
+              <label for="{{ first }}">First name</label>
+              <input id="{{ first }}" name="{{ first }}" type="text" maxlength="40" required
+                     autocomplete="{{ 'given-name' if n == 1 else 'off' }}"
+                     value="{{ name_values.get(first, '') }}"
+                     {% if first in name_errors %}aria-invalid="true" aria-describedby="{{ first }}-error"{% endif %}>
+              {% if first in name_errors %}<p class="field-error" id="{{ first }}-error">{{ name_errors[first] }}</p>{% endif %}
+            </div>
+            <div class="field">
+              <label for="{{ last }}">Last name</label>
+              <input id="{{ last }}" name="{{ last }}" type="text" maxlength="40" required
+                     autocomplete="{{ 'family-name' if n == 1 else 'off' }}"
+                     value="{{ name_values.get(last, '') }}"
+                     {% if last in name_errors %}aria-invalid="true" aria-describedby="{{ last }}-error"{% endif %}>
+              {% if last in name_errors %}<p class="field-error" id="{{ last }}-error">{{ name_errors[last] }}</p>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </fieldset>
+
+      <div class="demo-note">
+        <strong>Demo payment.</strong> No real payment is taken and no card details are collected.
+      </div>
       <button class="btn btn-solid" type="submit">Pay ${{ '{:,.2f}'.format(total_cents / 100) }} (demo) and book</button>
     </form>
   {% endif %}

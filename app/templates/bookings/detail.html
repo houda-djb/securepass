@@ -30,6 +30,24 @@
     <div><dt>Booked on</dt><dd>{{ booking.created_at.strftime('%d %b %Y, %H:%M') }} UTC</dd></div>
   </dl>
 
+  <h2 class="detail-heading">Passengers</h2>
+  {% if booking.travellers %}
+    <ol class="traveller-list">
+      {% for t in booking.travellers %}
+      <li>
+        <span class="traveller-name">{{ t.full_name }}</span>{% if loop.first %} <span class="badge badge-neutral">Lead</span>{% endif %}
+        {% if t.seat %}<span class="seat-tag">Seat {{ t.seat.label }}</span>{% else %}<span class="seat-tag seat-tag-empty">No seat chosen</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% if booking.can_cancel %}
+      <p><a class="btn btn-solid" href="{{ url_for('bookings.seats', reference=booking.reference) }}">
+        {{ 'Change seats' if booking.travellers|selectattr('seat')|list else 'Choose seats' }}</a></p>
+    {% endif %}
+  {% else %}
+    <p class="detail-note">No passenger names were saved with this booking.</p>
+  {% endif %}
+
   {% if booking.can_cancel %}
     <form method="post" action="{{ url_for('bookings.cancel', reference=booking.reference) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -42,3 +60,4 @@
   {% endif %}
 </section>
 {% endblock %}
+

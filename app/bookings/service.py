@@ -10,10 +10,10 @@ How overbooking is prevented (FR13, NFR5):
 """
 import secrets
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 
 from app.extensions import db
-from app.models import Booking, Flight, utcnow
+from app.models import Booking, Flight, Passenger, SeatAssignment, utcnow
 
 MAX_PASSENGERS = 9
 REFERENCE_LENGTH = 8
@@ -43,9 +43,13 @@ def booking_problem(flight: Flight, passengers: int) -> str | None:
     return None
 
 
-def create_booking(user_id: int, flight_id: int, passengers: int) -> Booking:
+def create_booking(user_id: int, flight_id: int, passengers: int,
+                   names: list[tuple[str, str]] | None = None) -> Booking:
+    """`names` is an optional list of (first, last) pairs, one per passenger."""
     if not 1 <= passengers <= MAX_PASSENGERS:
         raise BookingError(f"Choose between 1 and {MAX_PASSENGERS} passengers.")
+    if names and len(names) != passengers:
+        raise BookingError("Enter a name for every passenger.")
 
     flight = db.session.get(Flight, flight_id)
     if flight is None:
@@ -66,8 +70,10 @@ def create_booking(user_id: int, flight_id: int, passengers: int) -> Booking:
 
     booking = Booking(reference=new_reference(), user_id=user_id, flight_id=flight_id,
                       passengers=passengers, total_cents=price_cents * passengers)
+    for position, (first, last) in enumerate(names or [], start=1):
+        booking.travellers.append(Passenger(position=position, first_name=first, last_name=last))
     db.session.add(booking)
-    db.session.commit()  # seats and booking are saved together, or not at all
+    db.session.commit()  # seats, booking and passengers are saved together, or not at all
     return booking
 
 
@@ -92,4 +98,5 @@ def cancel_booking(user_id: int, booking: Booking) -> None:
         .where(Flight.id == booking.flight_id)
         .values(seats_available=Flight.seats_available + booking.passengers)
     )
+    db.session.execute(delete(SeatAssignment).where(SeatAssignment.booking_id == booking.id))  # free the seats
     db.session.commit()

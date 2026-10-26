@@ -36,8 +36,10 @@
 
       <div class="auth-links">
         {% if current_user.is_authenticated %}
-          <span class="avatar" aria-hidden="true">{{ current_user.email[:1]|upper }}</span>
-          <span class="user-email">{{ current_user.email }}</span>
+          <a class="user-chip" href="{{ url_for('auth.account') }}" {% if endpoint == 'auth.account' %}aria-current="page"{% endif %} aria-label="My account">
+            <span class="avatar" aria-hidden="true">{{ current_user.email[:1]|upper }}</span>
+            <span class="user-email">{{ current_user.email }}</span>
+          </a>
           <form class="logout-form" action="{{ url_for('auth.logout') }}" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="btn btn-ghost" type="submit">Log out</button>
@@ -90,6 +92,7 @@
         <ul>
           {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('bookings.index') }}">My Bookings</a></li>
+            <li><a href="{{ url_for('auth.account') }}">My account</a></li>
             {% if current_user.is_admin %}<li><a href="{{ url_for('admin.index') }}">Admin</a></li>{% endif %}
           {% else %}
             <li><a href="{{ url_for('auth.login') }}">Log in</a></li>

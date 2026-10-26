@@ -708,3 +708,113 @@ input::-ms-reveal, input::-ms-clear { display: none; }
   .stepper li { font-size: .7rem; }
   .stepper li:not(:last-child)::after { left: calc(50% + 22px); right: calc(-50% + 22px); }
 }
+
+/* ---------- Phase 9: passenger details and account page ---------- */
+.user-chip { text-decoration: none; display: inline-flex; align-items: center; gap: .6rem; border-radius: 999px; padding: .15rem .5rem .15rem .15rem; }
+.user-chip:hover .user-email, .user-chip[aria-current="page"] .user-email { color: #fff; }
+.user-chip:focus-visible { outline: 2px solid var(--blue-500); outline-offset: 2px; }
+
+.passenger-set { border: 0; padding: 0; margin: 1.6rem 0 1.2rem; min-width: 0; }
+.passenger-set legend { font-size: 1.25rem; font-weight: 700; padding: 0; margin-bottom: .3rem; }
+.passenger-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 1rem 1.1rem 1.15rem; margin-top: .9rem; box-shadow: var(--shadow-sm);
+}
+.passenger-card h3 { font-size: 1rem; margin: 0 0 .7rem; display: flex; align-items: center; gap: .5rem; }
+.passenger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.detail-heading { font-size: 1.15rem; margin: 1.6rem 0 .7rem; }
+.traveller-list { list-style: none; margin: 0 0 1.6rem; padding: 0; display: grid; gap: .5rem; max-width: 520px; counter-reset: traveller; }
+.traveller-list li {
+  counter-increment: traveller; display: flex; align-items: center; gap: .7rem;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .65rem .9rem;
+}
+.traveller-list li::before {
+  content: counter(traveller); width: 1.6rem; height: 1.6rem; border-radius: 50%; flex: none;
+  display: grid; place-items: center; background: var(--blue-50); color: var(--blue-700); font-size: .8rem; font-weight: 700;
+}
+.traveller-name { font-weight: 600; }
+
+.account-page { padding-block: 2.5rem 4rem; }
+.account-page h1 { font-size: 2rem; margin-bottom: 1.4rem; }
+.account-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1.4rem; align-items: start; }
+.account-main { display: grid; gap: 1.4rem; }
+.panel {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 1.5rem; box-shadow: var(--shadow-sm);
+}
+.panel h2 { font-size: 1.2rem; margin: 0 0 .3rem; }
+.panel-sub { margin: 0 0 1.1rem; color: var(--muted); font-size: .9rem; }
+.profile-row { display: flex; align-items: center; gap: 1rem; margin: 1rem 0 1.2rem; }
+.avatar-lg { width: 3.4rem; height: 3.4rem; font-size: 1.3rem; flex: none; }
+.profile-email { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.profile-meta { margin: .2rem 0 0; color: var(--muted); font-size: .88rem; }
+.mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; margin: 0 0 1.2rem; }
+.mini-stats > div { background: var(--blue-50); border-radius: var(--radius-sm); padding: .8rem .9rem; }
+.mini-stats dt { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.mini-stats dd { margin: .2rem 0 0; font-size: 1.5rem; font-weight: 700; color: var(--blue-700); }
+.stack-form { display: grid; gap: 1.1rem; }
+.stack-form .error-summary, .panel .error-summary { max-width: none; margin-bottom: 1rem; font-size: .9rem; }
+.activity-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+.activity-list li { display: grid; gap: .1rem; padding: .7rem 0; border-top: 1px solid var(--line); }
+.activity-list li:first-child { border-top: 0; }
+.activity-label { font-weight: 600; font-size: .92rem; }
+.activity-meta { color: var(--muted); font-size: .8rem; }
+
+@media (max-width: 900px) { .account-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) {
+  .passenger-grid, .mini-stats { grid-template-columns: 1fr; }
+  .panel { padding: 1.2rem; }
+}
+
+/* ---------- Phase 10: seat map ---------- */
+.seat-tag { margin-left: auto; font-size: .8rem; font-weight: 600; color: var(--blue-700); background: var(--blue-50); padding: .2rem .6rem; border-radius: 999px; }
+.seat-tag-empty { color: var(--muted); background: #eceff6; font-weight: 500; }
+
+.seats-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: start; margin-top: 1.4rem; }
+.seat-side { display: grid; gap: 1rem; align-content: start; }
+.seat-side .btn { justify-self: start; }
+.seat-passengers { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
+.seat-passenger {
+  display: grid; grid-template-columns: 1fr 8rem; gap: .8rem; align-items: center;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: .7rem .9rem;
+}
+.seat-passenger.is-active { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(37, 99, 235, .15); }
+.seat-passenger label { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+.seat-passenger select { min-height: 42px; padding: .4rem .6rem; border: 1px solid var(--line-strong); border-radius: 10px; background: #fff; color: var(--ink); font: inherit; }
+.seat-passenger-num {
+  width: 1.7rem; height: 1.7rem; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--blue-600); color: #fff; font-size: .8rem; font-weight: 700;
+}
+.seat-legend { list-style: none; margin: .2rem 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; font-size: .85rem; color: var(--muted); }
+.seat-legend li { display: flex; align-items: center; gap: .45rem; }
+
+.cabin-wrap { min-width: 0; }
+.cabin {
+  background: var(--card); border: 1px solid var(--line); border-radius: 120px 120px var(--radius) var(--radius);
+  padding: 1.6rem 1.4rem 1.2rem; max-height: 640px; overflow-y: auto; display: grid; gap: .35rem; justify-items: center;
+  box-shadow: var(--shadow-sm);
+}
+.cabin-nose { margin: 0 0 .4rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.cabin-head, .seat-row { display: grid; grid-template-columns: 1.6rem repeat(3, 2.1rem) 1.4rem repeat(3, 2.1rem); gap: .3rem; align-items: center; justify-items: center; }
+.cabin-head { font-size: .72rem; font-weight: 700; color: var(--muted); position: sticky; top: -1.6rem; background: var(--card); padding: .3rem 0; z-index: 1; }
+.seat-row-num { font-size: .7rem; color: var(--muted); }
+.seat-row.is-exit-row { margin-block: .5rem; }
+
+.seat {
+  width: 2.1rem; height: 2.1rem; padding: 0; border-radius: 8px 8px 5px 5px; display: inline-grid; place-items: center;
+  border: 1px solid #9db8ee; background: #e3edff; color: var(--blue-700); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer;
+}
+button.seat:hover:not(:disabled) { background: #c9dcff; border-color: var(--blue-600); }
+button.seat:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+.seat.is-exit { border-color: #e0b04a; background: #fff3d6; }
+.seat.is-taken { background: #e4e8f1; border-color: #d3d9e6; color: #9aa3b8; cursor: not-allowed; }
+.seat.is-selected, button.seat.is-selected:hover:not(:disabled) { background: var(--blue-600); border-color: var(--blue-700); color: #fff; }
+.seat-legend .seat { width: 1.3rem; height: 1.3rem; cursor: default; }
+
+@media (max-width: 900px) { .seats-layout { grid-template-columns: 1fr; } .cabin { max-height: 520px; } }
+@media (max-width: 520px) {
+  .seat-passenger { grid-template-columns: 1fr; }
+  .cabin-head, .seat-row { grid-template-columns: 1.3rem repeat(3, 1.9rem) 1rem repeat(3, 1.9rem); gap: .22rem; }
+  .seat { width: 1.9rem; height: 1.9rem; }
+}

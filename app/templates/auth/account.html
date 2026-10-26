@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}My account | SecurePass{% endblock %}
+
+{% macro password_field(id, label, autocomplete, hint=None) %}
+  <div class="field">
+    <label for="{{ id }}">{{ label }}</label>
+    <input id="{{ id }}" name="{{ id }}" type="password" autocomplete="{{ autocomplete }}" maxlength="128" required
+           {% if id in errors %}aria-invalid="true" aria-describedby="{{ id }}-error"{% endif %}>
+    {% if hint %}<p class="field-hint">{{ hint }}</p>{% endif %}
+    {% if id in errors %}<p class="field-error" id="{{ id }}-error">{{ errors[id] }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+<section class="container account-page">
+  <h1>My account</h1>
+
+  <div class="account-grid">
+    <div class="account-main">
+      <article class="panel">
+        <h2>Profile</h2>
+        <div class="profile-row">
+          <span class="avatar avatar-lg" aria-hidden="true">{{ current_user.email[:1]|upper }}</span>
+          <div>
+            <p class="profile-email">{{ current_user.email }}</p>
+            <p class="profile-meta">Member since {{ current_user.created_at.strftime('%d %b %Y') }}
+              {% if current_user.is_admin %}&middot; <span class="badge badge-ok">Administrator</span>{% endif %}</p>
+          </div>
+        </div>
+        <dl class="mini-stats">
+          <div><dt>Upcoming trips</dt><dd>{{ stats.upcoming }}</dd></div>
+          <div><dt>All bookings</dt><dd>{{ stats.total }}</dd></div>
+          <div><dt>Cancelled</dt><dd>{{ stats.cancelled }}</dd></div>
+        </dl>
+        <a class="btn btn-ghost" href="{{ url_for('bookings.index') }}">View my bookings</a>
+      </article>
+
+      <article class="panel">
+        <h2>Change password</h2>
+        <p class="panel-sub">You will stay logged in on this device after changing it.</p>
+        {% if errors %}<div class="error-summary" role="alert">Your password was not changed. Please check the details below.</div>{% endif %}
+        <form method="post" action="{{ url_for('auth.change_password') }}" novalidate class="stack-form">
+          {{ form.hidden_tag() }}
+          {{ password_field('current_password', 'Current password', 'current-password') }}
+          {{ password_field('new_password', 'New password', 'new-password', 'At least 10 characters, with a letter and a number.') }}
+          {{ password_field('confirm', 'Confirm new password', 'new-password') }}
+          <button class="btn btn-solid" type="submit">Change password</button>
+        </form>
+      </article>
+    </div>
+
+    <aside class="panel" aria-labelledby="activity-title">
+      <h2 id="activity-title">Recent activity</h2>
+      <p class="panel-sub">Security events on your account. If something here is not you, change your password now.</p>
+      {% if history %}
+        <ul class="activity-list">
+          {% for label, event in history %}
+          <li>
+            <span class="activity-label">{{ label }}</span>
+            <span class="activity-meta">{{ event.created_at.strftime('%d %b %Y, %H:%M') }} UTC{% if event.ip %} &middot; {{ event.ip }}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">Nothing recorded yet.</p>
+      {% endif %}
+    </aside>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Choose seats | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container detail seats-page">
+  <a class="back-link" href="{{ url_for('bookings.detail', reference=booking.reference) }}">&larr; Back to booking</a>
+  <h1>Choose your seats</h1>
+  <p class="detail-sub">
+    {{ booking.flight.origin.city }} to {{ booking.flight.destination.city }} &middot;
+    {{ booking.flight.flight_no }} &middot; {{ booking.flight.departs_at.strftime('%a %d %b %Y, %H:%M') }}
+  </p>
+
+  {% if problem %}<div class="error-summary" role="alert">{{ problem }}</div>{% endif %}
+
+  {% if booking.travellers and booking.status == 'confirmed' and not booking.flight.has_departed %}
+  <form method="post" action="{{ url_for('bookings.seats', reference=booking.reference) }}" class="seats-layout" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="seat-side">
+      <h2 class="detail-heading">Passengers</h2>
+      <ul class="seat-passengers">
+        {% for t in booking.travellers %}
+        <li class="seat-passenger" data-passenger="{{ t.position }}">
+          <label for="seat_{{ t.position }}">
+            <span class="seat-passenger-num">{{ t.position }}</span>
+            <span class="traveller-name">{{ t.full_name }}</span>
+          </label>
+          <select id="seat_{{ t.position }}" name="seat_{{ t.position }}" data-seat-select="{{ t.position }}">
+            <option value="">No seat</option>
+            {% for row in rows %}{% for letter in left ~ right %}
+              {% set label = row ~ letter %}
+              {% if label not in unavailable %}
+              <option value="{{ label }}" {% if current.get(t.position) == label %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}{% endfor %}
+          </select>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <ul class="seat-legend" aria-label="Legend">
+        <li><span class="seat" aria-hidden="true"></span> Available</li>
+        <li><span class="seat is-selected" aria-hidden="true"></span> Your seat</li>
+        <li><span class="seat is-taken" aria-hidden="true"></span> Taken</li>
+        <li><span class="seat is-exit" aria-hidden="true"></span> Exit row</li>
+      </ul>
+      <p class="field-hint">{{ free_count }} of {{ capacity }} seats are free. Seats are free to choose in this demo.</p>
+      <button class="btn btn-solid" type="submit">Save seats</button>
+      <a class="btn btn-ghost" href="{{ url_for('bookings.detail', reference=booking.reference) }}">Skip for now</a>
+    </div>
+
+    <div class="cabin-wrap">
+      <div class="cabin" data-seatmap hidden>
+        <p class="cabin-nose">Front of the aircraft</p>
+        <div class="cabin-head" aria-hidden="true">
+          <span></span>{% for l in left %}<span>{{ l }}</span>{% endfor %}<span></span>{% for l in right %}<span>{{ l }}</span>{% endfor %}
+        </div>
+        {% for row in rows %}
+        <div class="seat-row{% if row in exit_rows %} is-exit-row{% endif %}">
+          <span class="seat-row-num" aria-hidden="true">{{ row }}</span>
+          {% for letter in left %}{% set label = row ~ letter %}
+            <button type="button" class="seat{% if label in unavailable %} is-taken{% endif %}{% if row in exit_rows %} is-exit{% endif %}{% if label in holders %} is-selected{% endif %}"
+                    data-seat="{{ label }}" {% if label in unavailable %}disabled{% endif %}
+                    aria-label="Seat {{ label }}, {{ 'taken' if label in unavailable else 'available' }}"
+                    aria-pressed="{{ 'true' if label in holders else 'false' }}">{{ holders.get(label, '') }}</button>
+          {% endfor %}
+          <span class="seat-aisle" aria-hidden="true"></span>
+          {% for letter in right %}{% set label = row ~ letter %}
+            <button type="button" class="seat{% if label in unavailable %} is-taken{% endif %}{% if row in exit_rows %} is-exit{% endif %}{% if label in holders %} is-selected{% endif %}"
+                    data-seat="{{ label }}" {% if label in unavailable %}disabled{% endif %}
+                    aria-label="Seat {{ label }}, {{ 'taken' if label in unavailable else 'available' }}"
+                    aria-pressed="{{ 'true' if label in holders else 'false' }}">{{ holders.get(label, '') }}</button>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="field-hint cabin-fallback" data-seatmap-fallback>Pick a seat for each passenger from the lists.</p>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
