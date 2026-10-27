@@ -180,6 +180,7 @@
     var priceMax = $("[data-price-max]", panel);
     var priceOut = $("[data-price-out]", panel);
     var bands = $$("[data-band]", panel);
+    var carriers = $$("[data-airline-filter]", panel);
     var reset = $("[data-reset]", panel);
     var count = $("[data-count]", panel);
 
@@ -204,6 +205,8 @@
       var maxCents = priceMax ? Number(priceMax.value) * 100 : Infinity;
       var allowed = {};
       bands.forEach(function (box) { allowed[box.value] = box.checked; });
+      var airlineOk = {};
+      carriers.forEach(function (box) { airlineOk[box.value] = box.checked; });
       var order = sortBy ? sortBy.value : "time";
       var key = order === "price" ? "price" : (order === "duration" ? "duration" : "depart");
       var shown = 0;
@@ -213,7 +216,9 @@
         var visible = 0;
         group.cards.forEach(function (card) {
           var hour = Math.floor(num(card, "depart") / 100);
-          var show = num(card, "price") <= maxCents && allowed[bandOf(hour)];
+          var code = card.getAttribute("data-airline");
+          var carrierShown = !carriers.length || !code || airlineOk[code] !== false;
+          var show = num(card, "price") <= maxCents && allowed[bandOf(hour)] && carrierShown;
           card.hidden = !show;
           if (show) { visible++; }
         });
@@ -232,11 +237,13 @@
     if (sortBy) { sortBy.addEventListener("change", apply); }
     if (priceMax) { priceMax.addEventListener("input", apply); }
     bands.forEach(function (box) { box.addEventListener("change", apply); });
+    carriers.forEach(function (box) { box.addEventListener("change", apply); });
     if (reset) {
       reset.addEventListener("click", function () {
         if (sortBy) { sortBy.value = "time"; }
         if (priceMax) { priceMax.value = priceMax.max; }
         bands.forEach(function (box) { box.checked = true; });
+        carriers.forEach(function (box) { box.checked = true; });
         apply();
       });
     }

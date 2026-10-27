@@ -35,6 +35,39 @@
         <a class="btn btn-ghost" href="{{ url_for('bookings.index') }}">View my bookings</a>
       </article>
 
+      <article class="panel" id="two-factor">
+        <h2>Two-factor login
+          {% if current_user.totp_enabled %}<span class="badge badge-ok">On</span>{% else %}<span class="badge badge-neutral">Off</span>{% endif %}
+        </h2>
+        {% if current_user.totp_enabled %}
+          <p class="panel-sub">Logging in needs your password and a code from your authenticator app.
+            You have {{ recovery_left }} unused recovery code{{ '' if recovery_left == 1 else 's' }}.</p>
+          {% if tf_error %}<div class="error-summary" role="alert">{{ tf_error }}</div>{% endif %}
+          <form method="post" action="{{ url_for('auth.two_factor_new_codes') }}" novalidate class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <details class="tf-details">
+              <summary>Make new recovery codes or turn two-factor off</summary>
+              <p class="field-hint">Confirm with your password and a current code.</p>
+              <div class="field">
+                <label for="tf-password">Password</label>
+                <input id="tf-password" name="password" type="password" autocomplete="current-password" maxlength="128">
+              </div>
+              <div class="field">
+                <label for="tf-code">Code from your app (or a recovery code)</label>
+                <input id="tf-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" class="code-input">
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-ghost" type="submit">Make new recovery codes</button>
+                <button class="btn btn-danger" type="submit" formaction="{{ url_for('auth.two_factor_disable') }}">Turn off</button>
+              </div>
+            </details>
+          </form>
+        {% else %}
+          <p class="panel-sub">Add a second step to logging in, using an authenticator app on your phone.</p>
+          <a class="btn btn-solid" href="{{ url_for('auth.two_factor_setup') }}">Turn on two-factor login</a>
+        {% endif %}
+      </article>
+
       <article class="panel">
         <h2>Change password</h2>
         <p class="panel-sub">You will stay logged in on this device after changing it.</p>

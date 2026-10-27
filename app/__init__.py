@@ -4,7 +4,7 @@ from pathlib import Path
 from flask import Flask, render_template, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from app.extensions import csrf, db, limiter, login_manager
+from app.extensions import csrf, db, limiter, login_manager, migrate
 from app.security_headers import init_security_headers
 from config import CONFIGS
 
@@ -31,6 +31,7 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=hops, x_proto=hops, x_host=hops)
 
     db.init_app(app)
+    migrate.init_app(app, db, render_as_batch=True)  # batch mode: SQLite can't ALTER tables directly
     csrf.init_app(app)
     limiter.init_app(app)
     login_manager.init_app(app)
@@ -57,8 +58,9 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
     for command in (seed_command, reset_db_command, create_admin_command, security_scan_command):
         app.cli.add_command(command)
 
-    with app.app_context():
-        db.create_all()  # adds any missing tables; never touches existing data
+    if app.config.get("AUTO_CREATE_TABLES", True):
+        with app.app_context():
+            db.create_all()  # adds any missing tables; never touches existing data
 
     register_template_helpers(app)
     register_error_handlers(app)

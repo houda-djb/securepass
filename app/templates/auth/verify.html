@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Enter your code | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container auth-page">
+  <div class="auth-card">
+    <h1>Two-step check</h1>
+    <p class="auth-sub">Open your authenticator app and enter the 6-digit code for SecurePass.</p>
+
+    {% if error %}<div class="error-summary" role="alert">{{ error }}</div>{% endif %}
+
+    <form method="post" action="{{ url_for('auth.verify_login', next=next_url) if next_url else url_for('auth.verify_login') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="code">Code</label>
+        <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="12" required autofocus class="code-input"
+               {% if error %}aria-invalid="true"{% endif %}>
+        <p class="field-hint">Lost your phone? Type one of your recovery codes instead, for example ABCDE-12345.</p>
+      </div>
+      <button class="btn btn-solid btn-block" type="submit">Continue</button>
+    </form>
+    <p class="auth-switch"><a href="{{ url_for('auth.login') }}">Start again</a></p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Recovery codes | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container account-page">
+  <h1>{{ headline }}</h1>
+  <div class="panel setup-panel">
+    <h2>Save your recovery codes</h2>
+    <p class="panel-sub">Each code works once, if you ever lose your phone. They are shown only now, so copy them somewhere safe, such as a password manager.</p>
+    <ul class="code-grid" translate="no">
+      {% for code in codes %}<li>{{ code }}</li>{% endfor %}
+    </ul>
+    <a class="btn btn-solid" href="{{ url_for('auth.account') }}">I have saved them</a>
+  </div>
+</section>
+{% endblock %}
