@@ -26,10 +26,11 @@
     {% endif %}
 
     {# Price range for the filter sidebar, worked out from the flights actually shown. #}
-    {% set ns = namespace(lo=none, hi=none, count=0) %}
+    {% set ns = namespace(lo=none, hi=none, count=0, carriers=[]) %}
     {% for title, from_code, to_code, day, flights in legs %}
       {% for f in flights %}
         {% set ns.count = ns.count + 1 %}
+        {% if f.airline and f.airline not in ns.carriers %}{% set ns.carriers = ns.carriers + [f.airline] %}{% endif %}
         {% if ns.lo is none or f.price_cents < ns.lo %}{% set ns.lo = f.price_cents %}{% endif %}
         {% if ns.hi is none or f.price_cents > ns.hi %}{% set ns.hi = f.price_cents %}{% endif %}
       {% endfor %}
@@ -67,6 +68,16 @@
           <label class="check"><input type="checkbox" value="night" data-band checked> Night <span>10pm to 5am</span></label>
         </fieldset>
 
+        {% if ns.carriers|length > 1 %}
+        <fieldset class="filter-group">
+          <legend>Airlines</legend>
+          {% for a in ns.carriers|sort(attribute='name') %}
+          <label class="check"><input type="checkbox" value="{{ a.code }}" data-airline-filter checked>
+            <span class="carrier-dot {{ a.css_class }}" aria-hidden="true"></span> {{ a.name }}</label>
+          {% endfor %}
+        </fieldset>
+        {% endif %}
+
         <button class="btn btn-ghost btn-small" type="button" data-reset>Reset filters</button>
         <p class="filters-count" aria-live="polite" data-count></p>
       </aside>
@@ -80,9 +91,9 @@
           {% if flights %}
             <ul class="flight-list" data-leg>
               {% for f in flights %}
-              <li class="flight-card" data-price="{{ f.price_cents }}" data-depart="{{ f.departs_at.strftime('%H%M') }}" data-duration="{{ ((f.arrives_at - f.departs_at).total_seconds() // 60)|int }}">
+              <li class="flight-card" data-airline="{{ f.airline_code or '' }}" data-price="{{ f.price_cents }}" data-depart="{{ f.departs_at.strftime('%H%M') }}" data-duration="{{ ((f.arrives_at - f.departs_at).total_seconds() // 60)|int }}">
                 <div class="flight-times">
-                  <span class="carrier-badge" aria-hidden="true">SP</span>
+                  <span class="carrier-badge {{ f.airline.css_class if f.airline else '' }}" aria-hidden="true">{{ f.airline_code or 'SP' }}</span>
                   <span class="time">{{ f.departs_at.strftime('%H:%M') }}</span>
                   <span class="arrow" aria-hidden="true">&rarr;</span>
                   <span class="time">{{ f.arrives_at.strftime('%H:%M') }}</span>
@@ -90,6 +101,7 @@
                 <div class="flight-meta">
                   <strong>{{ f.origin.city }} to {{ f.destination.city }}</strong>
                   <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ f.seats_available }} seats left</span>
+                  {% if f.airline %}<span class="operator">Operated by {{ f.airline.name }}</span>{% endif %}
                   <span class="flight-tags">
                     <span class="pill">Non-stop</span>
                     {% if f.seats_available <= 10 %}<span class="pill pill-warn">Almost full</span>{% endif %}

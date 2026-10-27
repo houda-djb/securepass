@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Turn on two-factor login | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container account-page">
+  <a class="back-link" href="{{ url_for('auth.account') }}">&larr; My account</a>
+  <h1>Turn on two-factor login</h1>
+  <p class="panel-sub">With two-factor login, a stolen password is not enough to get into your account.</p>
+
+  <div class="panel setup-panel">
+    <ol class="setup-steps">
+      <li>
+        <h2>1. Install an authenticator app</h2>
+        <p>Google Authenticator, Microsoft Authenticator, Authy or a password manager all work.</p>
+      </li>
+      <li>
+        <h2>2. Add SecurePass</h2>
+        {% if qr %}
+          <div class="qr-box">{{ qr|safe }}</div>
+          <p class="field-hint">Scan this code with the app. Can't scan? Enter this key by hand:</p>
+        {% else %}
+          <p class="field-hint">Add a new account in the app and enter this key by hand:</p>
+        {% endif %}
+        <p class="secret-key" translate="no">{{ secret }}</p>
+      </li>
+      <li>
+        <h2>3. Enter the code it shows</h2>
+        {% if error %}<div class="error-summary" role="alert">{{ error }}</div>{% endif %}
+        <form method="post" action="{{ url_for('auth.two_factor_setup') }}" novalidate class="stack-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field">
+            <label for="code">6-digit code</label>
+            <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                   maxlength="12" required class="code-input" {% if error %}aria-invalid="true"{% endif %}>
+          </div>
+          <button class="btn btn-solid" type="submit">Turn on two-factor login</button>
+        </form>
+      </li>
+    </ol>
+  </div>
+</section>
+{% endblock %}

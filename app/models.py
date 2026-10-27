@@ -28,6 +28,20 @@ class Airport(db.Model):
         return f"{self.city} ({self.code})"
 
 
+class Airline(db.Model):
+    """The company that operates a flight. Flight numbers keep the SecurePass "SP" prefix
+    (the marketing code), exactly like a codeshare: "SP104, operated by Aurora Air"."""
+
+    __tablename__ = "airlines"
+
+    code = db.Column(db.String(2), primary_key=True)  # two letters, e.g. "AU"
+    name = db.Column(db.String(60), nullable=False)
+
+    @property
+    def css_class(self) -> str:
+        return f"carrier-{self.code.lower()}"
+
+
 class Flight(db.Model):
     __tablename__ = "flights"
 
@@ -40,7 +54,10 @@ class Flight(db.Model):
     arrives_at = db.Column(db.DateTime, nullable=False)
     price_cents = db.Column(db.Integer, nullable=False)  # money as whole cents, never floats
     seats_available = db.Column(db.Integer, nullable=False)
+    # Optional: flights added by an admin may not name an operator.
+    airline_code = db.Column(db.String(2), db.ForeignKey("airlines.code"), nullable=True)
 
+    airline = db.relationship("Airline")
     origin = db.relationship("Airport", foreign_keys=[origin_code])
     destination = db.relationship("Airport", foreign_keys=[destination_code])
 
@@ -76,6 +93,10 @@ class User(UserMixin, db.Model):
     failed_logins = db.Column(db.Integer, nullable=False, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    # Two-factor login with an authenticator app (TOTP). The secret only counts once enabled.
+    totp_secret = db.Column(db.String(64), nullable=True)
+    totp_enabled = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    last_totp_step = db.Column(db.Integer, nullable=True)  # blocks re-using a code (replay)
 
     __table_args__ = (db.CheckConstraint("role IN ('user', 'admin')", name="ck_user_role"),)
 
@@ -185,3 +206,16 @@ class SeatAssignment(db.Model):
 
     # The database itself refuses to give one seat to two people, even in a race (NFR5).
     __table_args__ = (db.UniqueConstraint("flight_id", "label", name="uq_seat_per_flight"),)
+
+
+
+class RecoveryCode(db.Model):
+    """One-time codes for logging in when the authenticator app is lost. Only a keyed hash
+    is stored, so the codes themselves can't be read back from the database."""
+
+    __tablename__ = "recovery_codes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    code_hash = db.Column(db.String(64), nullable=False)
+    used_at = db.Column(db.DateTime, nullable=True)

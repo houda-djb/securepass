@@ -17,7 +17,7 @@
       <span class="time">{{ booking.flight.departs_at.strftime('%H:%M') }}</span>
       <span>{{ booking.flight.origin.name }}, {{ booking.flight.origin.city }} ({{ booking.flight.origin.code }})</span>
     </div>
-    <div class="detail-duration">{{ booking.flight.flight_no }} &middot; {{ booking.flight.duration_display }}</div>
+    <div class="detail-duration">{{ booking.flight.flight_no }} &middot; {{ booking.flight.duration_display }}{% if booking.flight.airline %}<span class="detail-operator">Operated by {{ booking.flight.airline.name }}</span>{% endif %}</div>
     <div class="detail-leg">
       <span class="time">{{ booking.flight.arrives_at.strftime('%H:%M') }}</span>
       <span>{{ booking.flight.destination.name }}, {{ booking.flight.destination.city }} ({{ booking.flight.destination.code }})</span>

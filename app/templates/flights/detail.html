@@ -7,7 +7,7 @@
   <a class="back-link" href="{{ url_for('flights.search') }}">&larr; Back to search</a>
 
   <h1>{{ flight.origin.city }} to {{ flight.destination.city }}</h1>
-  <p class="detail-sub">Flight {{ flight.flight_no }} &middot; {{ flight.departs_at.strftime('%A %d %B %Y') }}</p>
+  <p class="detail-sub">Flight {{ flight.flight_no }}{% if flight.airline %} &middot; Operated by {{ flight.airline.name }}{% endif %} &middot; {{ flight.departs_at.strftime('%A %d %B %Y') }}</p>
 
   <div class="detail-card">
     <div class="detail-leg">

@@ -5,7 +5,7 @@ Everything is deterministic (no randomness) so the demo behaves the same every t
 from datetime import date, datetime, time, timedelta
 
 from app.extensions import db
-from app.models import Airport, Flight
+from app.models import Airline, Airport, Flight
 
 # code, city, country, airport name, slug (photo file), blurb, featured_rank
 AIRPORTS = [
@@ -22,6 +22,15 @@ AIRPORTS = [
     ("FCO", "Rome", "Italy", "Fiumicino", "rome", "", None),
     ("IST", "Istanbul", "Turkey", "Istanbul Airport", "istanbul", "", None),
     ("BCN", "Barcelona", "Spain", "El Prat", "barcelona", "", None),
+]
+
+# Fictional carriers that operate the demo routes (code, name).
+AIRLINES = [
+    ("AU", "Aurora Air"),
+    ("NB", "Nimbus Airways"),
+    ("MJ", "Meridian Jet"),
+    ("SL", "Solstice Air"),
+    ("VT", "Vantage Airlines"),
 ]
 
 # origin, destination, duration (minutes), base price (cents), departure hour
@@ -50,6 +59,9 @@ def seed_demo_data(days: int = 90, start: date | None = None) -> int:
         db.session.add(Airport(code=code, city=city, country=country, name=name,
                                slug=slug, blurb=blurb, featured_rank=rank))
 
+    for code, name in AIRLINES:
+        db.session.add(Airline(code=code, name=name))
+
     flights = []
     for index, (a, b, minutes, base, hour) in enumerate(ROUTES):
         for direction, (origin, dest, dep_hour) in enumerate(
@@ -67,6 +79,7 @@ def seed_demo_data(days: int = 90, start: date | None = None) -> int:
                     flight_no=flight_no, origin_code=origin, destination_code=dest,
                     departs_at=departs, arrives_at=departs + timedelta(minutes=minutes),
                     price_cents=price, seats_available=seats,
+                    airline_code=AIRLINES[index % len(AIRLINES)][0],   # one carrier per route, both ways
                 ))
     db.session.add_all(flights)
     db.session.commit()

@@ -16,7 +16,8 @@ def _flights_on_day(origin: str, destination: str, day, passengers: int):
     start = datetime.combine(day, time.min)
     stmt = (
         select(Flight)
-        .options(joinedload(Flight.origin), joinedload(Flight.destination))
+        .options(joinedload(Flight.origin), joinedload(Flight.destination),
+                 joinedload(Flight.airline))
         .where(
             Flight.origin_code == origin,
             Flight.destination_code == destination,

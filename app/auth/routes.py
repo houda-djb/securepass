@@ -1,23 +1,29 @@
+import time
 from datetime import datetime, timedelta
 
 from flask import current_app, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.auth import bp
+from app.auth import totp
 from app.auth.account_forms import ChangePasswordForm
 from app.auth.forms import LoginForm, RegisterForm
 from app.auth.passwords import password_problems
 from app.extensions import db, limiter
-from app.models import AuditLog, Booking, User, utcnow
+from app.models import AuditLog, Booking, RecoveryCode, User, utcnow
 from app.security import audit, is_safe_next
 
 # Used when the email is unknown, so "unknown email" takes as long as "wrong password"
 # and an attacker can't tell the two apart by timing.
 _DUMMY_HASH = generate_password_hash("not-a-real-password")
+
+NEEDS_CODE = "needs_code"      # the password was right, the authenticator code is still to come
+PENDING_SECONDS = 300          # how long a half-finished login stays open
+CODE_ERROR = "That code is not right. Use the 6-digit code from your app, or a recovery code."
 
 LOGIN_ERROR = ("Invalid email or password. After 5 failed attempts "
                "an account is locked for 15 minutes.")
@@ -67,7 +73,11 @@ def login():
         if form.validate():
             status = 401
             error = LOGIN_ERROR
-            if _attempt_login(form.email.data, form.password.data):
+            outcome = _attempt_login(form.email.data, form.password.data)
+            if outcome == NEEDS_CODE:
+                return redirect(url_for("auth.verify_login", next=next_url) if next_url
+                                else url_for("auth.verify_login"))
+            if outcome:
                 return redirect(next_url or url_for("main.index"))
     return render_template("auth/login.html", form=form, error=error, next_url=next_url), status
 
@@ -101,13 +111,26 @@ def _attempt_login(email: str, password: str) -> bool:
             audit("login_failed", user, f"failed attempt {user.failed_logins}")
         return False
 
+    if user.totp_enabled:
+        # Right password, but this account also needs its authenticator code. Nobody is logged
+        # in yet: the signed session only remembers who is half-way through, and for how long.
+        session.clear()
+        session["2fa_user"] = user.id
+        session["2fa_at"] = time.time()
+        audit("login_password_ok", user, "waiting for the authenticator code")
+        return NEEDS_CODE
+
+    _finish_login(user)
+    return True
+
+
+def _finish_login(user: User, detail: str = "") -> None:
     user.failed_logins = 0
     user.locked_until = None
     session.clear()  # start a fresh session on login (prevents session fixation)
     login_user(user)
     session.permanent = True
-    audit("login_success", user)
-    return True
+    audit("login_success", user, detail)
 
 
 @bp.route("/logout", methods=["POST"])  # POST + CSRF token: a link on another site can't log you out
@@ -133,6 +156,14 @@ EVENT_LABELS = {
     "password_change_failed": "Password change refused",
     "booking_created": "Booking made",
     "booking_cancelled": "Booking cancelled",
+    "login_password_ok": "Password accepted, waiting for the authenticator code",
+    "two_factor_failed": "Wrong authenticator code",
+    "two_factor_enabled": "Two-factor login turned on",
+    "two_factor_disabled": "Two-factor login turned off",
+    "two_factor_change_failed": "Two-factor change refused",
+    "recovery_code_used": "Recovery code used to log in",
+    "recovery_codes_renewed": "New recovery codes made",
+    "seats_selected": "Seats chosen",
 }
 HISTORY_LENGTH = 8
 
@@ -149,6 +180,7 @@ def _account_context():
         .order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).limit(HISTORY_LENGTH)
     ).all()
     return {
+        "recovery_left": _recovery_left(current_user) if current_user.totp_enabled else 0,
         "stats": {"total": len(bookings), "upcoming": sum(1 for b in confirmed if b.flight.departs_at > now),
                   "cancelled": len(bookings) - len(confirmed)},
         "history": [(EVENT_LABELS.get(e.event_type, e.event_type.replace("_", " ").capitalize()), e)
@@ -159,7 +191,8 @@ def _account_context():
 @bp.route("/account")
 @login_required
 def account():
-    return render_template("auth/account.html", form=ChangePasswordForm(), errors={}, **_account_context())
+    return render_template("auth/account.html", form=ChangePasswordForm(), errors={}, tf_error=None,
+                           **_account_context())
 
 
 @bp.route("/account/password", methods=["POST"])
@@ -190,7 +223,7 @@ def change_password():
                 errors["confirm"] = "The two new passwords don't match."
     if errors:
         return render_template("auth/account.html", form=ChangePasswordForm(formdata=None), errors=errors,
-                               **_account_context()), 400
+                               tf_error=None, **_account_context()), 400
 
     user = current_user._get_current_object()
     user.set_password(new)
@@ -203,3 +236,177 @@ def change_password():
     audit("password_changed", user)
     flash("Your password has been changed.", "success")
     return redirect(url_for("auth.account"))
+
+
+# ---------------------------------------------------------------- second factor at login
+
+def _pending_user() -> User | None:
+    """The person who has typed a correct password and now owes an authenticator code."""
+    user_id, started = session.get("2fa_user"), session.get("2fa_at")
+    if not isinstance(user_id, int) or not isinstance(started, (int, float)):
+        return None
+    if time.time() - started > PENDING_SECONDS:
+        session.clear()
+        return None
+    user = db.session.get(User, user_id)
+    return user if user is not None and user.totp_enabled else None
+
+
+def _recovery_left(user: User) -> int:
+    return db.session.scalar(select(func.count(RecoveryCode.id)).where(
+        RecoveryCode.user_id == user.id, RecoveryCode.used_at.is_(None))) or 0
+
+
+def _use_recovery_code(user: User, code: str) -> bool:
+    cleaned = totp.normalise_recovery(code)
+    if len(cleaned) != 10 or not cleaned.isalnum():
+        return False
+    row = db.session.scalar(select(RecoveryCode).where(
+        RecoveryCode.user_id == user.id, RecoveryCode.used_at.is_(None),
+        RecoveryCode.code_hash == totp.hash_recovery(cleaned, current_app.config["SECRET_KEY"])))
+    if row is None:
+        return False
+    row.used_at = utcnow()   # each recovery code works exactly once
+    return True
+
+
+def _second_factor_ok(user: User, code: str) -> bool:
+    """A 6-digit app code (never accepted twice) or an unused recovery code."""
+    digits = (code or "").replace(" ", "")
+    if digits.isascii() and digits.isdigit() and len(digits) == totp.DIGITS:
+        step = totp.verify(user.totp_secret, digits, user.last_totp_step)
+        if step is None:
+            return False
+        user.last_totp_step = step
+        return True
+    if _use_recovery_code(user, code):
+        audit("recovery_code_used", user, f"{_recovery_left(user)} unused codes left")
+        return True
+    return False
+
+
+@bp.route("/login/verify", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
+def verify_login():
+    if current_user.is_authenticated:
+        return redirect(url_for("main.index"))
+    user = _pending_user()
+    if user is None:
+        flash("Please log in again.", "info")
+        return redirect(url_for("auth.login"))
+
+    next_url = request.args.get("next")
+    next_url = next_url if is_safe_next(next_url) else None
+    error, status = None, 200
+
+    if request.method == "POST":
+        now = utcnow()
+        if user.locked_until is not None and user.locked_until <= now:
+            user.failed_logins, user.locked_until = 0, None
+        if user.is_locked(now):
+            audit("login_blocked", user, "account is locked")
+            session.clear()
+            flash("This account is temporarily locked. Try again later.", "error")
+            return redirect(url_for("auth.login"))
+
+        if _second_factor_ok(user, request.form.get("code", "")[:40]):
+            db.session.commit()
+            _finish_login(user, "two-factor")
+            return redirect(next_url or url_for("main.index"))
+
+        status, error = 401, CODE_ERROR
+        user.failed_logins += 1
+        if user.failed_logins >= current_app.config["MAX_FAILED_LOGINS"]:
+            user.locked_until = now + timedelta(minutes=current_app.config["LOCKOUT_MINUTES"])
+            audit("account_locked", user, f"{user.failed_logins} failed attempts")
+            session.clear()
+            flash("Too many wrong codes. This account is locked for a while.", "error")
+            return redirect(url_for("auth.login"))
+        audit("two_factor_failed", user, f"failed attempt {user.failed_logins}")
+    return render_template("auth/verify.html", error=error, next_url=next_url), status
+
+
+# ---------------------------------------------------------------- managing two-factor
+
+def _password_and_code_problem(user: User) -> str | None:
+    """Changes to two-factor need the password AND a current code, so a borrowed laptop
+    that is already logged in can't switch it off."""
+    if not user.check_password(request.form.get("password", "")[:128]):
+        return "That is not your current password."
+    if not _second_factor_ok(user, request.form.get("code", "")[:40]):
+        return CODE_ERROR
+    return None
+
+
+def _show_codes(user: User, headline: str):
+    codes = totp.new_recovery_codes()
+    db.session.execute(delete(RecoveryCode).where(RecoveryCode.user_id == user.id))
+    key = current_app.config["SECRET_KEY"]
+    db.session.add_all(RecoveryCode(user_id=user.id, code_hash=totp.hash_recovery(c, key)) for c in codes)
+    db.session.commit()
+    return render_template("auth/recovery_codes.html", codes=codes, headline=headline)
+
+
+@bp.route("/account/2fa", methods=["GET", "POST"])
+@login_required
+@limiter.limit("20 per hour", methods=["POST"])
+def two_factor_setup():
+    user = current_user._get_current_object()
+    if user.totp_enabled:
+        return redirect(url_for("auth.account"))
+    secret = session.get("totp_setup")
+    if not isinstance(secret, str) or len(secret) != 32:
+        secret = session["totp_setup"] = totp.new_secret()
+
+    error, status = None, 200
+    if request.method == "POST":
+        step = totp.verify(secret, request.form.get("code", "")[:12])
+        if step is None:
+            error, status = "That code is not right. Check the app and try the new code.", 400
+        else:
+            user.totp_secret, user.totp_enabled, user.last_totp_step = secret, True, step
+            db.session.commit()
+            session.pop("totp_setup", None)
+            audit("two_factor_enabled", user)
+            return _show_codes(user, "Two-factor login is on")
+    uri = totp.otpauth_uri(secret, user.email)
+    return render_template("auth/two_factor_setup.html", secret=totp.readable(secret),
+                           qr=totp.qr_svg(uri), error=error), status
+
+
+@bp.route("/account/2fa/disable", methods=["POST"])
+@login_required
+@limiter.limit("10 per hour", methods=["POST"])
+def two_factor_disable():
+    user = current_user._get_current_object()
+    if not user.totp_enabled:
+        return redirect(url_for("auth.account"))
+    problem = _password_and_code_problem(user)
+    if problem:
+        db.session.commit()   # keeps a recovery code marked used, if one was just tried
+        audit("two_factor_change_failed", user, "disable refused")
+        return render_template("auth/account.html", form=ChangePasswordForm(formdata=None), errors={},
+                               tf_error=problem, **_account_context()), 400
+    user.totp_secret, user.totp_enabled, user.last_totp_step = None, False, None
+    db.session.execute(delete(RecoveryCode).where(RecoveryCode.user_id == user.id))
+    db.session.commit()
+    audit("two_factor_disabled", user)
+    flash("Two-factor login is now off.", "info")
+    return redirect(url_for("auth.account"))
+
+
+@bp.route("/account/2fa/recovery", methods=["POST"])
+@login_required
+@limiter.limit("10 per hour", methods=["POST"])
+def two_factor_new_codes():
+    user = current_user._get_current_object()
+    if not user.totp_enabled:
+        return redirect(url_for("auth.account"))
+    problem = _password_and_code_problem(user)
+    if problem:
+        db.session.commit()
+        audit("two_factor_change_failed", user, "new recovery codes refused")
+        return render_template("auth/account.html", form=ChangePasswordForm(formdata=None), errors={},
+                               tf_error=problem, **_account_context()), 400
+    audit("recovery_codes_renewed", user)
+    return _show_codes(user, "New recovery codes")
