@@ -15,6 +15,7 @@
     <form method="post" novalidate>
       {{ form.hidden_tag() }}
       {{ field(form.flight_no, hint="For example SP104.") }}
+      {{ field(form.airline, hint="Optional. Passengers see it as \"Operated by\".") }}
       <div class="form-row">
         {{ field(form.origin) }}
         {{ field(form.destination) }}
@@ -35,3 +36,4 @@
   </div>
 </section>
 {% endblock %}
+
