@@ -22,6 +22,8 @@ class FlightForm(FlaskForm):
         DataRequired(),
         Regexp(r"^[A-Z]{2}[0-9]{1,4}$", message="Use two letters and 1 to 4 digits, for example SP104.")],
         render_kw={"placeholder": "e.g., SP104", "maxlength": 6, "autocomplete": "off"})
+    # Optional: "" means no operator is recorded. The choices are filled in by the route.
+    airline = SelectField("Operated by", default="")
     origin = SelectField("From", validators=[DataRequired()])
     destination = SelectField("To", validators=[DataRequired()])
     # InputRequired (not DataRequired) so unreadable input gets a specific message,

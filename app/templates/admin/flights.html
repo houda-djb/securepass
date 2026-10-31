@@ -21,11 +21,12 @@
   {% if flights %}
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>Flight</th><th>Route</th><th>Departs</th><th>Price</th><th>Seats</th><th></th></tr></thead>
+        <thead><tr><th>Flight</th><th>Airline</th><th>Route</th><th>Departs</th><th>Price</th><th>Seats</th><th></th></tr></thead>
         <tbody>
           {% for f in flights %}
           <tr>
             <td><strong>{{ f.flight_no }}</strong></td>
+            <td>{{ f.airline.name if f.airline else '' }}</td>
             <td>{{ f.origin_code }} to {{ f.destination_code }}</td>
             <td class="nowrap">{{ f.departs_at.strftime('%d %b %Y, %H:%M') }}</td>
             <td>{{ f.price_display }}</td>
@@ -58,3 +59,4 @@
   {% endif %}
 </section>
 {% endblock %}
+

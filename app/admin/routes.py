@@ -15,7 +15,7 @@ from app.admin.queries import (EVENT_STYLES, EVENT_TYPES, bookings_per_day, buil
                                dashboard_stats, locked_users, recent_events)
 from app.admin.scans import load_summary
 from app.extensions import db
-from app.models import Airport, Booking, Flight, User, utcnow
+from app.models import Airline, Airport, Booking, Flight, User, utcnow
 from app.security import audit
 
 MAX_ID = 2_147_483_647
@@ -69,6 +69,8 @@ def _flight_form(data=None) -> FlightForm:
         (a.code, a.label) for a in db.session.scalars(select(Airport).order_by(Airport.city))]
     form.origin.choices = choices
     form.destination.choices = choices
+    form.airline.choices = [("", "No airline recorded")] + [
+        (a.code, f"{a.name} ({a.code})") for a in db.session.scalars(select(Airline).order_by(Airline.name))]
     return form
 
 
@@ -77,7 +79,7 @@ def _form_data(flight: Flight) -> dict:
         "flight_no": flight.flight_no, "origin": flight.origin_code,
         "destination": flight.destination_code, "departs_at": flight.departs_at,
         "arrives_at": flight.arrives_at, "price": Decimal(flight.price_cents) / 100,
-        "seats_available": flight.seats_available,
+        "seats_available": flight.seats_available, "airline": flight.airline_code or "",
     }
 
 
@@ -89,6 +91,7 @@ def _apply(flight: Flight, form: FlightForm) -> None:
     flight.arrives_at = form.arrives_at.data
     flight.price_cents = int((form.price.data * 100).to_integral_value())  # money as whole cents
     flight.seats_available = form.seats_available.data
+    flight.airline_code = form.airline.data or None
 
 
 @bp.route("/flights")
