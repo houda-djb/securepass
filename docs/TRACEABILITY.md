@@ -51,9 +51,9 @@ the evidence is a screenshot or a setting you can show, not an automated test.
 
 | ID | Requirement | How it is met | Evidence |
 |---|---|---|---|
-| NFR1 | Reference look, desktop and mobile | One stylesheet with breakpoints | Manual: screenshots at desktop and phone width |
+| NFR1 | Reference look, desktop and mobile | One stylesheet with breakpoints; the version 2 design system (dark navy and blue, self-hosted Inter font) | Manual: screenshots at desktop and phone width |
 | NFR2 | Maintainable code | App factory, blueprints, service layer, README | Manual: project layout in the README |
-| NFR3 | Automated tests for the key rules | More than 200 tests, 90 percent coverage gate | `test_ci_runs_every_gate` |
+| NFR3 | Automated tests for the key rules | More than 300 tests, 90 percent coverage gate | `test_ci_runs_every_gate` |
 | NFR4 | Search under 2 seconds | Indexed query | `test_search_stays_fast_with_three_months_of_flights` |
 | NFR5 | Transactional booking and cancellation | Conditional updates in one transaction | `test_cancelling_twice_returns_seats_only_once`, `test_a_stale_page_cannot_oversell` |
 | NFR6 | Runs anywhere with Python 3.12 | CI installs from `requirements.txt` on a clean machine | `test_every_dependency_has_a_version_rule` |
@@ -84,3 +84,18 @@ the evidence is a screenshot or a setting you can show, not an automated test.
 | AC6 | An insecure commit fails the pipeline | `test_bandit_gate_rejects_insecure_code_and_accepts_safe_code`; Manual: red-cross screenshot of the demo pull request |
 | AC7 | A failed login shows up on the dashboard | `test_a_failed_login_shows_up_on_the_security_dashboard` |
 | AC8 | Passwords in the database are hashes | `test_register_creates_user_with_hashed_password` |
+
+## Version 2 additions
+
+Features added after version 1. They extend the requirements above; they do not replace them.
+
+| ID | Addition | How it is met | Evidence |
+|---|---|---|---|
+| V2-1 | Passenger names on a booking, checked on the server | Checkout fields, `app/bookings/passengers.py`, `passengers` table | `test_names_are_saved_with_the_booking_in_order`, `test_bad_names_are_refused_and_nothing_is_booked`, `test_names_are_not_written_to_the_audit_log` |
+| V2-2 | Seat map: one seat per passenger, never two passengers on one seat | `app/bookings/seats.py`, unique constraint per flight | `test_seats_are_saved_and_shown_on_the_booking`, `test_two_passengers_cannot_share_a_seat`, `test_the_database_itself_refuses_a_double_booked_seat`, `test_cancelling_frees_the_seats` |
+| V2-3 | Account page with change password and recent activity | `/account`, `/account/password` | `test_account_page_shows_profile_stats_and_history`, `test_password_can_be_changed_and_is_audited`, `test_bad_password_changes_are_refused`, `test_password_change_is_rate_limited` |
+| V2-4 | Two-factor login with an authenticator app and recovery codes | `app/auth/totp.py`, `/login/verify`, `/account/2fa` | `test_codes_match_the_published_test_vectors`, `test_login_then_needs_the_code`, `test_a_code_can_only_be_used_once`, `test_too_many_wrong_codes_lock_the_account`, `test_a_recovery_code_logs_in_once`, `test_turning_it_off_needs_password_and_code` |
+| V2-5 | Every demo flight names its operating airline | `airlines` table, `flights.airline_code` | `test_demo_data_has_five_airlines_and_every_flight_has_one`, `test_search_results_name_the_operator`, `test_a_flight_without_an_airline_still_works` |
+| V2-6 | Database changes through migrations that keep data | `migrations/`, `docs/DATABASE.md` | `test_migrations_build_exactly_the_schema_the_models_describe`, `test_an_older_database_gets_airlines_without_losing_flights`, `test_migrations_also_work_on_a_database_the_app_created_itself`, `test_a_migration_can_be_undone_and_redone` |
+| V2-7 | No request to any other site (self-hosted font) | Policy lists only this site | `test_csp_only_allows_this_site`, `test_templates_load_nothing_from_unexpected_sites` |
+| V2-8 | Results filters, booking steps and the redesigned pages | `static/js/main.js`, `static/css/style.css`, templates | Manual: screenshots of the home page, results with filters, checkout, seat map and account page |

@@ -15,7 +15,8 @@ pip install -r requirements-dev.txt
 cp .env.example .env               # Windows: copy .env.example .env
 python -c "import secrets; print(secrets.token_hex(32))"   # paste into SECRET_KEY in .env
 
-flask --app wsgi seed              # demo airports and flights
+flask --app wsgi db upgrade        # create or update the database tables
+flask --app wsgi seed              # demo airports, airlines and flights
 flask --app wsgi create-admin      # asks for an email and a password
 flask --app wsgi run --debug       # open http://127.0.0.1:5000
 ```
@@ -24,7 +25,9 @@ flask --app wsgi run --debug       # open http://127.0.0.1:5000
 
 | Command | What it does |
 |---|---|
-| `flask --app wsgi seed` | Adds demo airports and flights (does nothing if they exist) |
+| `flask --app wsgi db upgrade` | Brings any database up to date with the latest migrations (safe to repeat) |
+| `flask --app wsgi db migrate -m "text"` | Records a model change as a new migration (read it before committing) |
+| `flask --app wsgi seed` | Adds demo airports, airlines and flights (does nothing if they exist) |
 | `flask --app wsgi reset-db` | Deletes everything, including accounts, and rebuilds the demo data |
 | `flask --app wsgi create-admin` | Creates an admin account (no default admin exists) |
 | `flask --app wsgi security-scan` | Runs Bandit and pip-audit and saves a summary for the admin dashboard |
@@ -40,9 +43,14 @@ pip-audit -r requirements.txt
 ## Features
 
 - Flight search with server-side validation, results and details pages
+- Results filters (sort, price, time of day, airline) that work on the page without reloading
+- Airlines: every demo flight names the carrier that operates it
 - Registration, login, logout, roles (`user`, `admin`)
-- Bookings: checkout (demo payment), My Bookings, cancellation
+- Two-factor login with an authenticator app (QR code, one-time recovery codes)
+- My account: profile, trip counts, your own recent security activity, change password
+- Bookings: passenger names, seat map, checkout (demo payment), My Bookings, cancellation
 - Admin area: security dashboard, account unlock, flight management
+- Database migrations (Flask-Migrate), so the structure can change without losing data
 
 ## Security controls
 
@@ -61,6 +69,10 @@ pip-audit -r requirements.txt
 | SR11 | Secrets from environment variables, weak production key refused | `config.py`, `app/__init__.py` |
 | SR12 | Custom error pages without internals | `app/templates/errors/` |
 | SR13 | Audit log of security events | `app/security.py`, dashboard |
+| SR1, SR7 (v2) | Two-factor login: time-based codes (RFC 6238), no code reuse, lockout on wrong codes, keyed-hash recovery codes | `app/auth/totp.py`, `app/auth/routes.py` |
+| SR3 (v2) | Passenger names and seat labels checked on the server | `app/bookings/passengers.py`, `app/bookings/seats.py` |
+| FR13 (v2) | A seat can go to one passenger only, enforced by the database | `app/models.py` (`uq_seat_per_flight`) |
+| SR9 (v2) | The page loads nothing from other sites: the font is served from `static/fonts` | `app/security_headers.py` |
 | FR13 | One atomic UPDATE claims seats | `app/bookings/service.py` |
 | TR5, TR6 | Tests, Bandit, pip-audit on every pull request | `.github/workflows/` |
 
@@ -71,6 +83,8 @@ pip-audit -r requirements.txt
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Diagrams: system, data model, safe booking, delivery pipeline, production setup |
 | [docs/OWASP_TOP10.md](docs/OWASP_TOP10.md) | The OWASP Top 10 checklist: controls, proof and what is not covered |
 | [docs/TRACEABILITY.md](docs/TRACEABILITY.md) | Every requirement mapped to how it is met and the test that proves it |
+| [docs/DATABASE.md](docs/DATABASE.md) | Migrations: the commands and the history of the database structure |
+| [docs/DEMO_V2.md](docs/DEMO_V2.md) | A 5 minute walk through the version 2 features |
 | [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | A 10 minute demo and likely questions |
 | [SECURITY.md](SECURITY.md) | Reporting policy and known limits |
 
@@ -92,14 +106,17 @@ Use a production server (Waitress on Windows, Gunicorn on Linux) behind a proxy 
 ```
 app/
   __init__.py          create_app() factory, error handlers, production checks
-  models.py            Airport, Flight, User, AuditLog, Booking
+  models.py            Airport, Airline, Flight, User, AuditLog, Booking, Passenger,
+                       SeatAssignment, RecoveryCode
   security.py          audit log, role checks, safe redirects
   security_headers.py  Content-Security-Policy and the other browser headers
-  auth/                register, login, logout, password rules
+  auth/                register, login, logout, password rules, account page, two-factor (totp.py)
   flights/             search, results, details
-  bookings/            checkout, My Bookings, cancel (rules in service.py)
+  bookings/            checkout, My Bookings, cancel (rules in service.py),
+                       passenger names (passengers.py), seat map (seats.py)
   admin/               dashboard, flight management, scan summary
-  templates/ static/
+  templates/ static/   one stylesheet (style.css), one script (main.js), self-hosted font
+migrations/            database migrations (Flask-Migrate)
 config.py              settings; secrets come from the environment
 docs/                  architecture, OWASP checklist, traceability, demo script
 tests/                 unit, security, pipeline and documentation tests
@@ -126,14 +143,23 @@ git push -u origin phase-7-hardening   # then open a pull request; merge when CI
 | 5 | Audit log and security dashboard | Done |
 | 6 | CI hardening | Done |
 | 7 | Security headers, production hardening, documentation | Done |
+| 8 | Version 2: new design system, search filters, booking steps | Done |
+| 9 | Passenger names and the account page | Done |
+| 10 | Seat map | Done |
+| 11 | Airlines and database migrations | Done |
+| 12 | Two-factor login | Done |
+| 13 | Version 2 documentation | Done |
 
 ## Future work
 
-Two-factor authentication, email verification and password reset, a real payment provider,
-PostgreSQL with migrations, alerting on the audit log, a Docker image, and a second static
+Email verification and password reset, a real payment provider, PostgreSQL (migrations are
+already in place), alerting on the audit log, encrypting the two-factor secret at rest, choosing
+the airline in the admin flight form, multi-city search, a Docker image, and a second static
 analysis tool such as Semgrep.
 
 ## Adding real destination photos
 
-Put `tokyo.jpg`, `santorini.jpg` and `serengeti.jpg` in `app/static/img/destinations/`.
-They appear automatically; until then the cards show a coloured gradient.
+The destination cards use illustrated scenes (`app/static/img/destinations/<name>.svg`). To use a
+real photo instead, add a file with the same name and a `.jpg` ending, for example `tokyo.jpg`
+in that folder. It is used automatically. Only files from this site are allowed by the
+Content-Security-Policy, so photos must be stored here, not linked from another site.
