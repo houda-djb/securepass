@@ -33,3 +33,12 @@ running `db upgrade` is always safe.
 
 `reset-db` deletes accounts and bookings. Migrations change the structure and keep the data,
 which is what a live system needs.
+
+## PostgreSQL
+
+Production uses PostgreSQL. Set `DATABASE_URL` to `postgresql://user:password@host/dbname`; the app rewrites the
+prefix to `postgresql+psycopg://` itself, so addresses handed out by hosting services work unchanged. Without
+`DATABASE_URL` the app keeps using a local SQLite file, which is the quickest way to run it on a laptop.
+
+The same migrations (`flask --app wsgi db upgrade`) build both databases, and continuous integration runs the whole
+test suite on both. See `docs/DEPLOYMENT.md` for running, deploying and backing up.

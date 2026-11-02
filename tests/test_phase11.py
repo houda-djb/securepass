@@ -112,7 +112,8 @@ def test_the_airline_filter_appears_only_when_results_have_several_airlines(app,
 def test_removing_an_airline_in_use_is_blocked_by_the_database(app):
     from sqlalchemy.exc import IntegrityError
     with app.app_context():
-        db.session.execute(text("PRAGMA foreign_keys=ON"))
+        if db.engine.dialect.name == "sqlite":      # PostgreSQL always enforces foreign keys
+            db.session.execute(text("PRAGMA foreign_keys=ON"))
         used = Flight.query.first().airline_code
         try:
             db.session.execute(text("DELETE FROM airlines WHERE code = :c"), {"c": used})
