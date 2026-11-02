@@ -1,0 +1,33 @@
+# Runs SecurePass with a real PostgreSQL database on your own computer:
+#   copy .env.example to .env, fill in the two secrets, then run:  docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: securepass
+      POSTGRES_USER: securepass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your .env file}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U securepass -d securepass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No "ports": the database can only be reached by the web container, never from outside.
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://securepass:${POSTGRES_PASSWORD}@db:5432/securepass
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in your .env file}
+      # "development" lets you log in over plain http://localhost. Real hosting uses "production".
+      FLASK_ENV: ${FLASK_ENV:-development}
+    ports:
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  pgdata:

@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from flask import render_template
-from sqlalchemy import func, select
+from flask import current_app, jsonify, render_template
+from sqlalchemy import func, select, text
 
-from app.extensions import db
+from app.extensions import db, limiter
 from app.main import bp
 from app.models import Airport, Flight
+from app.security_headers import talisman
 
 
 def lowest_fares() -> dict[str, int]:
@@ -36,3 +37,23 @@ def index():
     )
     return render_template("index.html", featured=featured, airports=airports, values={}, errors={},
                            from_prices=from_prices, more=more)
+
+
+@bp.route("/healthz")
+@limiter.exempt
+@talisman(force_https=False)   # the hosting platform checks this over plain http inside its network
+def healthz():
+    """Used by the hosting platform to see whether the app and its database are alive.
+
+    It says nothing about versions, settings or what went wrong: only "ok" or "unavailable".
+    """
+    try:
+        db.session.execute(text("SELECT 1"))
+    except Exception:  # any database problem means "not healthy"; details stay in the logs
+        db.session.rollback()
+        current_app.logger.exception("Health check: the database did not answer.")
+        response, status = jsonify(status="unavailable"), 503
+    else:
+        response, status = jsonify(status="ok"), 200
+    response.headers["Cache-Control"] = "no-store"
+    return response, status
