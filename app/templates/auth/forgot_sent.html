@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Check your email | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container auth-page">
+  <div class="auth-card">
+    <h1>Check your email</h1>
+    <p class="auth-sub">If an account exists for that address, we have sent a link to reset the password.
+      It works for 30 minutes and only once.</p>
+    <p class="auth-switch"><a href="{{ url_for('auth.login') }}">Back to log in</a></p>
+  </div>
+</section>
+{% endblock %}

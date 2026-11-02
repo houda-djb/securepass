@@ -3,6 +3,9 @@
 Everything is deterministic (no randomness) so the demo behaves the same every time.
 """
 from datetime import date, datetime, time, timedelta
+from math import asin, cos, radians, sin, sqrt
+
+from sqlalchemy import select
 
 from app.extensions import db
 from app.models import Airline, Airport, Flight
@@ -50,20 +53,64 @@ ROUTES = [
     ("IST", "JRO", 470, 61000, 23),
 ]
 
+# Rough position of each airport (latitude, longitude), used to invent a duration and a price.
+POSITIONS = {
+    "HND": (35.55, 139.78), "JTR": (36.40, 25.48), "JRO": (-3.43, 37.07),
+    "JFK": (40.64, -73.78), "LHR": (51.47, -0.45), "CDG": (49.01, 2.55),
+    "DXB": (25.25, 55.36), "FCO": (41.80, 12.25), "IST": (41.26, 28.74),
+    "BCN": (41.30, 2.08),
+}
+
+
+def _distance_km(a: str, b: str) -> float:
+    (lat1, lon1), (lat2, lon2) = POSITIONS[a], POSITIONS[b]
+    p1, p2 = radians(lat1), radians(lat2)
+    h = sin((p2 - p1) / 2) ** 2 + cos(p1) * cos(p2) * sin((radians(lon2) - radians(lon1)) / 2) ** 2
+    return 12742 * asin(sqrt(h))
+
+
+def _all_routes() -> list[tuple[str, str, int, int, int]]:
+    """The hand-made routes first (their numbers never change), then every other city pair,
+    so a search between any two airports finds a flight."""
+    routes = list(ROUTES)
+    known = {frozenset((a, b)) for a, b, *_ in routes}
+    codes = [row[0] for row in AIRPORTS]
+    for i, a in enumerate(codes):
+        for b in codes[i + 1:]:
+            if frozenset((a, b)) in known:
+                continue
+            km = _distance_km(a, b)
+            minutes = int(40 + km / 13.5)                 # about 800 km/h plus taxiing
+            base = int((3500 + km * 7.5) / 100) * 100     # cents, cheaper per km on long trips
+            routes.append((a, b, minutes, base, 6 + (len(routes) * 5) % 16))
+    return routes
+
 
 def seed_demo_data(days: int = 90, start: date | None = None) -> int:
-    """Insert airports and flights. Returns the number of flights created."""
+    """Insert whatever is missing: airports, airlines and flights for the next N days.
+
+    Safe to run again: existing rows are kept, so it also tops up flights as time passes.
+    Returns the number of flights created.
+    """
     start = start or date.today()
 
+    have_airports = set(db.session.scalars(select(Airport.code)))
     for code, city, country, name, slug, blurb, rank in AIRPORTS:
-        db.session.add(Airport(code=code, city=city, country=country, name=name,
-                               slug=slug, blurb=blurb, featured_rank=rank))
+        if code not in have_airports:
+            db.session.add(Airport(code=code, city=city, country=country, name=name,
+                                   slug=slug, blurb=blurb, featured_rank=rank))
 
+    have_airlines = set(db.session.scalars(select(Airline.code)))
     for code, name in AIRLINES:
-        db.session.add(Airline(code=code, name=name))
+        if code not in have_airlines:
+            db.session.add(Airline(code=code, name=name))
+
+    first = datetime.combine(start, time.min)
+    existing = set(db.session.execute(
+        select(Flight.flight_no, Flight.departs_at).where(Flight.departs_at >= first)).all())
 
     flights = []
-    for index, (a, b, minutes, base, hour) in enumerate(ROUTES):
+    for index, (a, b, minutes, base, hour) in enumerate(_all_routes()):
         for direction, (origin, dest, dep_hour) in enumerate(
             [(a, b, hour), (b, a, (hour + 6) % 24)]
         ):
@@ -71,6 +118,8 @@ def seed_demo_data(days: int = 90, start: date | None = None) -> int:
             for offset in range(days):
                 day = start + timedelta(days=offset)
                 departs = datetime.combine(day, time(dep_hour, 0))
+                if (flight_no, departs) in existing:
+                    continue
                 weekend = 1.12 if day.weekday() >= 4 else 1.0   # Fri-Sun cost more
                 last_minute = 1 + max(0, 14 - offset) * 0.01      # closer dates cost more
                 price = int(base * weekend * last_minute / 100) * 100

@@ -14,6 +14,7 @@ EVENT_TYPES = (
     "register", "login_success", "login_failed", "login_blocked", "account_locked",
     "account_unlocked", "logout", "access_denied", "booking_created", "booking_cancelled",
     "flight_created", "flight_updated", "flight_deleted",
+    "password_changed", "password_reset_requested", "password_reset",
 )
 
 # Badge colour for each event type on the dashboard.
