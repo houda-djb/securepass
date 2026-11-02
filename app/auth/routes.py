@@ -10,7 +10,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.auth import bp
 from app.auth import totp
-from app.auth.account_forms import ChangePasswordForm
+from app.auth.account_forms import ChangePasswordForm, ForgotPasswordForm, ResetPasswordForm
+from app.auth.reset import send_reset_email, user_for_token
 from app.auth.forms import LoginForm, RegisterForm
 from app.auth.passwords import password_problems
 from app.extensions import db, limiter
@@ -153,6 +154,8 @@ EVENT_LABELS = {
     "logout": "Logged out",
     "register": "Account created",
     "password_changed": "Password changed",
+    "password_reset_requested": "Password reset link requested",
+    "password_reset": "Password reset with an emailed link",
     "password_change_failed": "Password change refused",
     "booking_created": "Booking made",
     "booking_cancelled": "Booking cancelled",
@@ -410,3 +413,52 @@ def two_factor_new_codes():
                                tf_error=problem, **_account_context()), 400
     audit("recovery_codes_renewed", user)
     return _show_codes(user, "New recovery codes")
+
+
+# ------------------------------------------------------------ forgot password
+
+@bp.route("/forgot-password", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for("auth.account"))
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = db.session.scalar(select(User).where(User.email == form.email.data))
+        if user is not None:
+            audit("password_reset_requested", user)
+            send_reset_email(user)
+        # The same answer whether or not the account exists, so this page can't be used
+        # to find out who has an account.
+        return render_template("auth/forgot_sent.html")
+    return render_template("auth/forgot_password.html", form=form), (400 if form.is_submitted() else 200)
+
+
+@bp.route("/reset-password/<token>", methods=["GET", "POST"])
+@limiter.limit("20 per hour", methods=["POST"])
+def reset_password(token: str):
+    user = user_for_token(token[:500])
+    if user is None:
+        flash("That reset link is not valid any more. Ask for a new one.", "error")
+        return redirect(url_for("auth.forgot_password"))
+
+    form = ResetPasswordForm()
+    problem = None
+    if form.validate_on_submit():
+        if form.password.data != form.confirm.data:
+            problem = "The two passwords do not match."
+        elif user.check_password(form.password.data):
+            problem = "Choose a password you have not used before on this account."
+        else:
+            problems = password_problems(form.password.data, user.email)
+            if problems:
+                problem = " ".join(problems)
+        if problem is None:
+            user.set_password(form.password.data)
+            user.failed_logins = 0
+            user.locked_until = None
+            audit("password_reset", user)  # also saves the change above
+            flash("Your password was changed. You can log in now.", "success")
+            return redirect(url_for("auth.login"))
+    status = 400 if form.is_submitted() else 200
+    return render_template("auth/reset_password.html", form=form, problem=problem), status

@@ -1,3 +1,4 @@
+from app.auth.common_passwords import is_too_common
 MIN_LENGTH = 10
 MAX_LENGTH = 128  # also stops people sending huge strings to the (slow) hash function
 
@@ -11,4 +12,7 @@ def password_problems(password: str, email: str = "") -> list[str]:
         problems.append("Include at least one letter and one number.")
     if email and password.lower() == email.strip().lower():
         problems.append("The password can't be the same as your email.")
+    if is_too_common(password):
+        problems.append("That password is too easy to guess. Choose something less common.")    
     return problems
+

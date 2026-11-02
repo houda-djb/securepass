@@ -391,6 +391,8 @@ img, svg { max-width: 100%; }
 .auth-card form { display: grid; gap: 1.1rem; margin-top: 1.4rem; }
 .auth-card .error-summary { margin-top: 1rem; max-width: none; font-size: .9rem; }
 .auth-sub { color: var(--muted); margin: .4rem 0 0; }
+.auth-forgot { margin: -.2rem 0 1rem; text-align: right; font-size: .9rem; }
+.auth-forgot a { color: var(--blue-700); font-weight: 600; }
 .auth-switch { margin: 1.4rem 0 0; font-size: .92rem; text-align: center; color: var(--muted); }
 .auth-switch a { color: var(--blue-700); font-weight: 600; }
 

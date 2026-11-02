@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField
+from wtforms import PasswordField, StringField
 from wtforms.validators import DataRequired, Length
 
 
@@ -9,4 +9,14 @@ class ChangePasswordForm(FlaskForm):
 
     current_password = PasswordField("Current password", validators=[DataRequired(), Length(max=128)])
     new_password = PasswordField("New password", validators=[DataRequired(), Length(max=128)])
+    confirm = PasswordField("Confirm new password", validators=[DataRequired(), Length(max=128)])
+
+
+class ForgotPasswordForm(FlaskForm):
+    email = StringField("Email", filters=[lambda v: (v or "").strip().lower()],
+                        validators=[DataRequired(), Length(max=254)])
+
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField("New password", validators=[DataRequired(), Length(max=128)])
     confirm = PasswordField("Confirm new password", validators=[DataRequired(), Length(max=128)])

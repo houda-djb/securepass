@@ -309,8 +309,10 @@ def test_create_admin_rejects_weak_password_and_duplicates(app, users):
 
 
 def test_seed_does_nothing_when_data_exists(app):
-    result = app.test_cli_runner().invoke(seed_command)
-    assert "already there" in result.output
+    runner = app.test_cli_runner()
+    runner.invoke(seed_command)              # tops up to the default 90 days
+    result = runner.invoke(seed_command)     # a second run has nothing left to add
+    assert "Nothing to add" in result.output
     with app.app_context():
         assert Airport.query.count() == 10
 

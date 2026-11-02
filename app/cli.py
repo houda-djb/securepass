@@ -14,12 +14,10 @@ from app.seed import seed_demo_data
 @with_appcontext
 @click.option("--days", default=90, show_default=True, help="How many days of flights to create.")
 def seed_command(days: int) -> None:
-    """Add demo airports and flights. Does nothing if they already exist."""
-    if db.session.scalar(select(Airport).limit(1)) is not None:
-        click.echo("Demo data is already there. Use 'flask reset-db' to start over.")
-        return
+    """Add any missing demo airports and flights. Existing data is kept, so it is safe to repeat."""
     count = seed_demo_data(days=days)
-    click.echo(f"Created {count} flights for the next {days} days.")
+    click.echo(f"Created {count} new flights for the next {days} days." if count
+               else "Nothing to add: the flights are already there.")
 
 
 @click.command("reset-db")

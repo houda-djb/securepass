@@ -27,6 +27,8 @@
         {% if form.password.errors %}<p class="field-error" id="password-error">{{ form.password.errors[0] }}</p>{% endif %}
       </div>
 
+      <p class="auth-forgot"><a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a></p>
+
       <button class="btn btn-solid btn-block" type="submit">Log in</button>
     </form>
 
@@ -34,3 +36,4 @@
   </div>
 </section>
 {% endblock %}
+

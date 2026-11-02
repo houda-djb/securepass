@@ -42,7 +42,12 @@ def test_return_trip_shows_both_legs(client):
     assert "Paris to London" in html
 
 
-def test_no_flights_message_for_unserved_route(client):
+def test_no_flights_message_for_unserved_route(app, client):
+    from app.extensions import db
+    from app.models import Flight
+    with app.app_context():   # every airport pair has flights now, so remove this route's flights
+        Flight.query.filter_by(origin_code="JRO", destination_code="BCN").delete()
+        db.session.commit()
     res = search(client, origin="JRO", destination="BCN")
     assert res.status_code == 200
     assert "No flights match" in res.get_data(as_text=True)
