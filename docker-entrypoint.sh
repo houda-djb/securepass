@@ -6,6 +6,8 @@ set -e
 
 flask --app wsgi db upgrade
 flask --app wsgi seed
+# Creates the first admin from ADMIN_EMAIL / ADMIN_PASSWORD when no admin exists yet (does nothing otherwise).
+flask --app wsgi bootstrap-admin
 
 # One worker with several threads: the rate limits live in this process's memory (see
 # docs/DEPLOYMENT.md). X-Forwarded-* headers are handled by the app itself (PROXY_HOPS).

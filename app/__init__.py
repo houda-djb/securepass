@@ -45,7 +45,8 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
     from app.admin import bp as admin_bp
     from app.auth import bp as auth_bp
     from app.bookings import bp as bookings_bp
-    from app.cli import create_admin_command, reset_db_command, security_scan_command, seed_command
+    from app.cli import (bootstrap_admin_command, create_admin_command, reset_db_command,
+                         security_scan_command, seed_command)
     from app.flights import bp as flights_bp
     from app.main import bp as main_bp
 
@@ -55,7 +56,8 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
 
     for blueprint in (main_bp, flights_bp, auth_bp, bookings_bp, admin_bp):
         app.register_blueprint(blueprint)
-    for command in (seed_command, reset_db_command, create_admin_command, security_scan_command):
+    for command in (seed_command, reset_db_command, create_admin_command, bootstrap_admin_command,
+                    security_scan_command):
         app.cli.add_command(command)
 
     if app.config.get("AUTO_CREATE_TABLES", True):
