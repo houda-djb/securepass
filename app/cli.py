@@ -1,3 +1,4 @@
+import os
 import click
 from email_validator import EmailNotValidError, validate_email
 from flask.cli import with_appcontext
@@ -54,6 +55,42 @@ def create_admin_command(email: str, password: str) -> None:
     db.session.add(admin)
     db.session.commit()
     click.echo(f"Admin account created for {email}.")
+
+
+@click.command("bootstrap-admin")
+@with_appcontext
+def bootstrap_admin_command() -> None:
+    """Create the first admin from ADMIN_EMAIL and ADMIN_PASSWORD, only if there is no admin yet.
+
+    For hosting plans without a shell (Render's free plan). It never changes an existing
+    admin, never prints the password, and never stops the app from starting: any problem is
+    only reported. Remove ADMIN_PASSWORD from the environment after the first start.
+    """
+    email = os.environ.get("ADMIN_EMAIL", "").strip()
+    password = os.environ.get("ADMIN_PASSWORD", "")
+    if not email or not password:
+        click.echo("bootstrap-admin: ADMIN_EMAIL and ADMIN_PASSWORD are not both set, nothing to do.")
+        return
+    if db.session.scalar(select(User).where(User.role == "admin").limit(1)) is not None:
+        click.echo("bootstrap-admin: an admin account already exists, nothing to do.")
+        return
+    try:
+        email = validate_email(email, check_deliverability=False).normalized.lower()
+    except EmailNotValidError as error:
+        click.echo(f"bootstrap-admin: ADMIN_EMAIL is not a valid address ({error}).")
+        return
+    problems = password_problems(password, email)
+    if problems:
+        click.echo("bootstrap-admin: ADMIN_PASSWORD was refused. " + " ".join(problems))
+        return
+    if db.session.scalar(select(User).where(User.email == email)) is not None:
+        click.echo("bootstrap-admin: that email already belongs to a normal account, nothing changed.")
+        return
+    admin = User(email=email, role="admin")
+    admin.set_password(password)
+    db.session.add(admin)
+    db.session.commit()
+    click.echo(f"bootstrap-admin: admin account created for {email}. Now remove ADMIN_PASSWORD from the environment.")
 
 
 @click.command("security-scan")
