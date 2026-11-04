@@ -1,5 +1,6 @@
 <nav class="admin-nav" aria-label="Admin sections">
   <a href="{{ url_for('admin.index') }}" {% if active == 'dashboard' %}class="active" aria-current="page"{% endif %}>Security dashboard</a>
   <a href="{{ url_for('admin.flights') }}" {% if active == 'flights' %}class="active" aria-current="page"{% endif %}>Flights</a>
+  <a href="{{ url_for('admin.sales_reports') }}" {% if active == 'reports' %}class="active" aria-current="page"{% endif %}>Reports</a>
 </nav>
 

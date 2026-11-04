@@ -1134,3 +1134,13 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.02em; }
   .eticket { filter: none; }
 }
 .pay-set + .demo-note { margin-top: 1.2rem; }
+
+/* ---------- Admin reports (Phase 21) ---------- */
+.report-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 1.4rem; }
+.report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+.report-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.report-table th, .report-table td { padding: .65rem .9rem; text-align: left; border-bottom: 1px solid var(--line); }
+.report-table thead th { font-size: .8rem; color: var(--muted); background: var(--blue-50); }
+.report-table tbody th { font-weight: 600; }
+.report-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 800px) { .report-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .report-grid { grid-template-columns: 1fr; } }
