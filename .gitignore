@@ -9,3 +9,5 @@ instance/
 .coverage
 *.dump
 securepass-backup-*
+
+photos_in/
