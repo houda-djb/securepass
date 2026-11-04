@@ -65,6 +65,16 @@
         {% endfor %}
       </fieldset>
 
+      <fieldset class="pay-set">
+        <legend>Payment method</legend>
+        {% for key, info in methods.items() %}
+        <label class="pay-option">
+          <input type="radio" name="payment_method" value="{{ key }}" {% if key == chosen_method %}checked{% endif %}>
+          <span class="pay-text"><strong>{{ info[0] }}</strong><small>{{ info[1] }}</small></span>
+        </label>
+        {% endfor %}
+      </fieldset>
+
       <div class="demo-note">
         <strong>Demo payment.</strong> No real payment is taken and no card details are collected.
       </div>

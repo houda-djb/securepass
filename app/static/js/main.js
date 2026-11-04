@@ -348,4 +348,9 @@
       if (window.console) { console.error(error); }
     }
   });
+
+  // Print button on the e-ticket (no inline handlers are allowed by the CSP).
+  $$("[data-print]").forEach(function (button) {
+    button.addEventListener("click", function () { window.print(); });
+  });
 })();
