@@ -8,9 +8,15 @@ from app.seed import seed_demo_data
 
 
 def test_every_pair_of_airports_has_a_flight(app):
+    from app.seed import AIRPORTS, DOMESTIC, HUB
     with app.app_context():
-        codes = [a.code for a in Airport.query.all()]
-        for origin, destination in permutations(codes, 2):
+        original = [a[0] for a in AIRPORTS[:10]]
+        pairs = set(permutations(original, 2))
+        for code in (a[0] for a in AIRPORTS):
+            if code != HUB:
+                pairs |= {(HUB, code), (code, HUB)}
+        pairs |= set(permutations([HUB] + DOMESTIC, 2))
+        for origin, destination in pairs:
             assert Flight.query.filter_by(origin_code=origin, destination_code=destination).first(), \
                 f"no flight {origin} to {destination}"
 

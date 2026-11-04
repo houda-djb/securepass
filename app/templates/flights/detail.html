@@ -22,7 +22,7 @@
   </div>
 
   <dl class="detail-facts">
-    <div><dt>Price</dt><dd>{{ flight.price_display }} per passenger</dd></div>
+    <div><dt>Price</dt><dd>{{ money(flight.price_cents, 2) }} per passenger</dd></div>
     <div><dt>Seats left</dt><dd>{{ flight.seats_available }}</dd></div>
     <div><dt>Departure time</dt><dd>{{ flight.departs_at.strftime('%H:%M') }} (local time)</dd></div>
   </dl>

@@ -26,7 +26,7 @@
 
   <dl class="detail-facts">
     <div><dt>Passengers</dt><dd>{{ booking.passengers }}</dd></div>
-    <div><dt>Total (demo)</dt><dd class="total">{{ booking.total_display }}</dd></div>
+    <div><dt>Total (demo)</dt><dd class="total">{{ money(booking.total_cents, 2) }}</dd></div>
     <div><dt>Booked on</dt><dd>{{ booking.created_at.strftime('%d %b %Y, %H:%M') }} UTC</dd></div>
   </dl>
 

@@ -22,8 +22,8 @@
 
   <dl class="detail-facts">
     <div><dt>Passengers</dt><dd>{{ passengers }}</dd></div>
-    <div><dt>Price per passenger</dt><dd>{{ flight.price_display }}</dd></div>
-    <div><dt>Total</dt><dd class="total">${{ '{:,.2f}'.format(total_cents / 100) }}</dd></div>
+    <div><dt>Price per passenger</dt><dd>{{ money(flight.price_cents, 2) }}</dd></div>
+    <div><dt>Total</dt><dd class="total">{{ money(total_cents, 2) }}</dd></div>
   </dl>
 
   {% if problem %}
@@ -68,7 +68,7 @@
       <div class="demo-note">
         <strong>Demo payment.</strong> No real payment is taken and no card details are collected.
       </div>
-      <button class="btn btn-solid" type="submit">Pay ${{ '{:,.2f}'.format(total_cents / 100) }} (demo) and book</button>
+      <button class="btn btn-solid" type="submit">Pay {{ money(total_cents, 2) }} (demo) and book</button>
     </form>
   {% endif %}
 </section>

@@ -70,6 +70,18 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
 
 
 def register_template_helpers(app: Flask) -> None:
+    from app.currency import CURRENCIES, current_currency, money, slider_format
+
+    def art_class(slug: str) -> str:
+        """"dest-<slug>" when an illustration exists for the city, so its picture is shown."""
+        return f"dest-{slug}" if (Path(app.static_folder) / "img" / "destinations" / f"{slug}.svg").is_file() else ""
+
+    app.add_template_global(art_class, "art_class")
+    app.add_template_global(money, "money")
+    app.add_template_global(current_currency, "current_currency")
+    app.add_template_global(slider_format, "slider_format")
+    app.add_template_global(CURRENCIES, "CURRENCIES")
+
     @app.template_global()
     def photo_url(slug: str) -> str | None:
         """URL of static/img/destinations/<slug>.jpg, or None if no photo was added yet.

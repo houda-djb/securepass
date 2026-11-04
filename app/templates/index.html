@@ -1,69 +1,59 @@
 {% extends "base.html" %}
-{% block title %}SecurePass: Explore the world, securely{% endblock %}
+{% from "_cards.html" import place_card %}
+{% block title %}SecurePass: flights from Algeria, with every price in view{% endblock %}
 
 {% block content %}
+{% set hero_photo = photo_url('hero') %}
 <section class="hero">
+  {% if hero_photo %}<img class="hero-photo" src="{{ hero_photo }}" alt="" width="1920" height="1080">{% endif %}
   <div class="container hero-inner">
-    <p class="eyebrow">Secure flight booking</p>
-    <h1>Explore the World, Securely.</h1>
-    <p class="hero-sub">A seamless flight booking experience, built on trust and clarity.</p>
+    <h1>Where to next from Alger?</h1>
+    <p class="hero-sub">Prices in dinars, seats you choose yourself, and an account that stays yours.</p>
 
     {% include "_search_form.html" %}
 
     <ul class="trust-row">
-      <li>
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
-        Protected accounts
-      </li>
-      <li>
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
-        Safe bookings
-      </li>
-      <li>
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-        Every event audited
-      </li>
+      <li><strong>{{ city_count }}</strong> cities</li>
+      <li><strong>{{ country_count }}</strong> countries</li>
+      <li>Prices in <strong>DZD, EUR or USD</strong></li>
+      <li>Two-step login available</li>
     </ul>
   </div>
 </section>
 
-<section class="destinations container" id="destinations">
-  <h2>Featured Destinations</h2>
-  <div class="dest-grid">
-    {% for d in featured %}
-    {% set photo = photo_url(d.slug) %}
-    <article class="dest-card">
-      <div class="dest-art dest-{{ d.slug }}" role="img" aria-label="{{ d.city }}">
-        {% if photo %}<img src="{{ photo }}" alt="" loading="lazy">{% endif %}
-        <span class="dest-code">{{ d.code }}</span>
-        {% if d.code in from_prices %}<span class="price-chip">From {{ '${:,.0f}'.format(from_prices[d.code] / 100) }}</span>{% endif %}
-      </div>
-      <h3>{{ d.city }}</h3>
-      <p>{{ d.blurb }}</p>
-      <a class="dest-link" href="{{ url_for('flights.search', destination=d.code) }}">View flights to {{ d.city }}</a>
-    </article>
-    {% endfor %}
+<section class="seasonal container" id="seasons" aria-labelledby="seasons-title">
+  <div class="section-head">
+    <h2 id="seasons-title">Where to go this {{ season }}</h2>
+    <a class="view-all" href="{{ url_for('main.plan') }}">Plan by month &rarr;</a>
   </div>
+  <nav class="season-tabs" aria-label="Choose a season">
+    {% for s in seasons %}
+      <a href="{{ url_for('main.index', season=s) }}#seasons" {% if s == season %}aria-current="true"{% endif %}>{{ s|capitalize }}</a>
+    {% endfor %}
+  </nav>
+  {% if in_season %}
+  <ul class="place-grid has-lead">
+    {% for c in in_season %}
+      {{ place_card(url_for('main.country', slug=c.slug), c.name, "Best " ~ best_time[c.slug], c.why,
+                    country_fares.get(c.slug), "countries/" ~ c.slug, c.tone, "", loop.first) }}
+    {% endfor %}
+  </ul>
+  <p class="fine-print">General travel guidance, not a weather forecast. Flight prices are the lowest fares from Alger.</p>
+  {% else %}
+  <p class="empty">No countries are listed for this season yet.</p>
+  {% endif %}
 </section>
 
-{% if more %}
-<section class="more container" aria-labelledby="more-title">
+{% if top_trips %}
+<section class="trips container" aria-labelledby="trips-title">
   <div class="section-head">
-    <h2 id="more-title">More places to go</h2>
-    <a class="view-all" href="{{ url_for('flights.search') }}">Search all flights &rarr;</a>
+    <h2 id="trips-title">Top trips from {{ home.city if home else 'Alger' }}</h2>
+    <a class="view-all" href="{{ url_for('main.countries') }}">All countries &rarr;</a>
   </div>
-  <ul class="pop-grid">
-    {% for a in more %}
-    {% set photo = photo_url(a.slug) %}
-    <li>
-      <a class="pop-card" href="{{ url_for('flights.search', destination=a.code) }}">
-        <span class="pop-art pop-{{ a.slug }}" aria-hidden="true">
-          {% if photo %}<img src="{{ photo }}" alt="" loading="lazy">{% endif %}
-        </span>
-        <span class="pop-city">{{ a.city }}</span>
-        <span class="pop-from">From <strong>{{ '${:,.0f}'.format(from_prices[a.code] / 100) }}</strong></span>
-      </a>
-    </li>
+  <ul class="place-grid trips-grid">
+    {% for a in top_trips %}
+      {{ place_card(url_for('flights.search', origin='ALG', destination=a.code), a.city, a.country, "",
+                    home_fares.get(a.code), a.slug, a.tone, art_class(a.slug)) }}
     {% endfor %}
   </ul>
 </section>
@@ -75,7 +65,7 @@
   <ol class="steps">
     <li><h3>Search</h3><p>Pick your airports, dates and passengers. Results come back quickly, with every price shown up front.</p></li>
     <li><h3>Choose</h3><p>Compare times, duration, price and seats left, then open the flight details.</p></li>
-    <li><h3>Confirm</h3><p>Review the total and finish with a demo payment. No card details are ever collected.</p></li>
+    <li><h3>Confirm</h3><p>Choose your seats, review the total and finish with a demo payment. No card details are ever collected.</p></li>
     <li><h3>Manage</h3><p>Find every booking in your account, each with a private reference code, and cancel from there.</p></li>
   </ol>
 </section>
@@ -87,7 +77,7 @@
     <article class="feature">
       <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></div>
       <h3>Protected accounts</h3>
-      <p>Passwords are stored as salted hashes, and repeated wrong guesses lock the account for 15 minutes.</p>
+      <p>Passwords are stored as salted hashes, wrong guesses lock the account for 15 minutes, and you can add a second step with an authenticator app.</p>
     </article>
     <article class="feature">
       <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></div>

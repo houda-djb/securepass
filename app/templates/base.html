@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0a1226">
+  <meta name="theme-color" content="#0a2e3f">
   <title>{% block title %}SecurePass{% endblock %}</title>
-  {# Inter is served from our own static folder, so the page makes no third-party requests. #}
-  <link rel="preload" href="{{ url_for('static', filename='fonts/inter-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+  {# The fonts are served from our own static folder, so the page makes no third-party requests. #}
+  <link rel="preload" href="{{ url_for('static', filename='fonts/hanken-grotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage-grotesque-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -27,7 +28,8 @@
 
       <nav class="main-nav" aria-label="Main">
         <a href="{{ url_for('flights.search') }}" {% if endpoint.startswith('flights.') %}aria-current="page"{% endif %}>Explore Flights</a>
-        <a href="{{ url_for('main.index') }}#destinations">Featured Destinations</a>
+        <a href="{{ url_for('main.countries') }}" {% if endpoint in ('main.countries', 'main.country') %}aria-current="page"{% endif %}>Countries</a>
+        <a href="{{ url_for('main.plan') }}" {% if endpoint == 'main.plan' %}aria-current="page"{% endif %}>Plan by month</a>
         {% if current_user.is_authenticated %}
           <a href="{{ url_for('bookings.index') }}" {% if endpoint.startswith('bookings.') %}aria-current="page"{% endif %}>My Bookings</a>
           {% if current_user.is_admin %}<a href="{{ url_for('admin.index') }}" {% if endpoint.startswith('admin.') %}aria-current="page"{% endif %}>Admin</a>{% endif %}
@@ -35,6 +37,13 @@
       </nav>
 
       <div class="auth-links">
+        <form class="currency-form" action="{{ url_for('main.choose_currency') }}" method="post" aria-label="Show prices in">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+          {% for code in CURRENCIES %}
+            <button type="submit" name="currency" value="{{ code }}" {% if code == current_currency() %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ code }}</button>
+          {% endfor %}
+        </form>
         {% if current_user.is_authenticated %}
           <a class="user-chip" href="{{ url_for('auth.account') }}" {% if endpoint == 'auth.account' %}aria-current="page"{% endif %} aria-label="My account">
             <span class="avatar" aria-hidden="true">{{ current_user.email[:1]|upper }}</span>
@@ -84,7 +93,8 @@
         <h2 class="footer-title">Explore</h2>
         <ul>
           <li><a href="{{ url_for('flights.search') }}">Explore Flights</a></li>
-          <li><a href="{{ url_for('main.index') }}#destinations">Featured Destinations</a></li>
+          <li><a href="{{ url_for('main.countries') }}">Countries</a></li>
+          <li><a href="{{ url_for('main.plan') }}">Plan by month</a></li>
         </ul>
       </nav>
       <nav aria-label="Account">
@@ -110,7 +120,7 @@
       </div>
     </div>
     <div class="container footer-base">
-      <p>SecurePass is a final-year project. Demo data only; no real bookings or payments.</p>
+      <p>SecurePass is a final-year project. Demo data only: no real bookings or payments. Dinar and euro prices use fixed, indicative rates.</p>
       <p>Fly safe.</p>
     </div>
   </footer>

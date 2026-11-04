@@ -18,7 +18,7 @@
           <span>Reference <span class="ref">{{ b.reference }}</span> &middot; {{ b.passengers }} passenger{{ '' if b.passengers == 1 else 's' }}</span>
         </div>
         <div class="flight-price">
-          <span class="price">{{ b.total_display }}</span>
+          <span class="price">{{ money(b.total_cents, 2) }}</span>
           <span class="badge badge-{{ b.status }}">{{ b.status|capitalize }}</span>
         </div>
         <a class="btn btn-ghost" href="{{ url_for('bookings.detail', reference=b.reference) }}">View</a>
@@ -28,3 +28,4 @@
   {% endif %}
 </section>
 {% endblock %}
+

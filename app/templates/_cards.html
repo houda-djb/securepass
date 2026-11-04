@@ -1,0 +1,19 @@
+{# One card for a country or a city. The photo is static/img/destinations/<photo_slug>.jpg when it
+   exists; until then a coloured placeholder (tone 1 to 8) and, for the first ten cities, the old
+   illustration are shown. The whole card is one link. #}
+{% macro place_card(href, title, kicker, text, price, photo_slug, tone, art="", lead=false) -%}
+{% set photo = photo_url(photo_slug) %}
+<li class="place-card{% if lead %} is-lead{% endif %}">
+  <a class="place-link" href="{{ href }}">
+    <span class="place-art tone-{{ tone }} {{ art }}" aria-hidden="true">
+      {% if photo %}<img src="{{ photo }}" alt="" loading="lazy" width="960" height="720">{% endif %}
+    </span>
+    <span class="place-body">
+      {% if kicker %}<span class="place-kicker">{{ kicker }}</span>{% endif %}
+      <span class="place-title">{{ title }}</span>
+      {% if text %}<span class="place-text">{{ text }}</span>{% endif %}
+      {% if price %}<span class="place-price">From <strong>{{ money(price) }}</strong></span>{% endif %}
+    </span>
+  </a>
+</li>
+{%- endmacro %}
