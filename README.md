@@ -86,6 +86,8 @@ pip-audit -r requirements.txt
 | [docs/DATABASE.md](docs/DATABASE.md) | Migrations: the commands and the history of the database structure |
 | [docs/DEMO_V2.md](docs/DEMO_V2.md) | A 5 minute walk through the version 2 features |
 | [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | A 10 minute demo and likely questions |
+- [v3.0 release notes](docs/V3_RELEASE.md)
+- [v3.0 demo script](docs/DEMO_V3.md)
 | [SECURITY.md](SECURITY.md) | Reporting policy and known limits |
 
 Tests check these documents, so a renamed test or a missing requirement fails the build.
@@ -163,3 +165,4 @@ The destination cards use illustrated scenes (`app/static/img/destinations/<name
 real photo instead, add a file with the same name and a `.jpg` ending, for example `tokyo.jpg`
 in that folder. It is used automatically. Only files from this site are allowed by the
 Content-Security-Policy, so photos must be stored here, not linked from another site.
+
