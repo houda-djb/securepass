@@ -80,6 +80,8 @@ def register_template_helpers(app: Flask) -> None:
     app.add_template_global(money, "money")
     app.add_template_global(current_currency, "current_currency")
     app.add_template_global(slider_format, "slider_format")
+    from app.bookings.payment import method_label
+    app.add_template_global(method_label, "method_label")
     app.add_template_global(CURRENCIES, "CURRENCIES")
 
     @app.template_global()

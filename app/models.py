@@ -178,6 +178,8 @@ class Booking(db.Model):
     passengers = db.Column(db.Integer, nullable=False)
     total_cents = db.Column(db.Integer, nullable=False)  # worked out on the server, never sent by the browser
     status = db.Column(db.String(10), nullable=False, default="confirmed")
+    # How the visitor chose to pay (demo only, never real money). See app/bookings/payment.py.
+    payment_method = db.Column(db.String(12), nullable=False, default="card", server_default="card")
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     cancelled_at = db.Column(db.DateTime, nullable=True)
 

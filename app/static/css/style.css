@@ -1091,3 +1091,46 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.02em; }
 .site-footer .brand, .site-footer .brand-name { color: #fff; }
 .flight-card.ticket { align-items: stretch; }
 .ticket-main, .ticket-stub { align-self: stretch; margin: 0; }
+
+/* ---------- Payment options and e-ticket (Phase 20) ---------- */
+.pay-set { border: 0; padding: 0; margin: 1.6rem 0 0; display: grid; gap: .6rem; }
+.pay-set legend { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin-bottom: .6rem; padding: 0; }
+.pay-option { display: flex; gap: .8rem; align-items: flex-start; padding: .9rem 1.1rem; background: #fff; border: 1px solid var(--line-strong); border-radius: var(--radius); cursor: pointer; }
+.pay-option:hover { border-color: var(--blue-600); }
+.pay-option:has(input:checked) { border-color: var(--blue-600); background: var(--blue-50); box-shadow: 0 0 0 1px var(--blue-600) inset; }
+.pay-option input { margin-top: .3rem; accent-color: var(--blue-600); }
+.pay-text { display: flex; flex-direction: column; gap: .15rem; }
+.pay-text small { color: var(--muted); font-size: .86rem; }
+
+.eticket { display: grid; grid-template-columns: minmax(0, 1fr) 14rem; max-width: 52rem; margin: 1.4rem 0 .8rem; filter: drop-shadow(0 8px 18px rgba(10, 46, 63, .14)); }
+.eticket-main, .eticket-stub { background: #fff; border: 1px solid var(--line); }
+.eticket-main { padding: 1.6rem 1.8rem; border-radius: var(--radius-lg) 0 0 var(--radius-lg); border-right: 0; }
+.eticket-stub { padding: 1.6rem 1.3rem; border-left: 2px dashed var(--line-strong); border-radius: 0 var(--radius-lg) var(--radius-lg) 0; display: flex; flex-direction: column; gap: .6rem; justify-content: center; color: var(--ink); }
+.eticket-brand { margin: 0 0 1rem; font-weight: 700; color: var(--blue-700); font-size: .85rem; letter-spacing: .04em; text-transform: uppercase; }
+.eticket-route { display: flex; align-items: center; gap: 1.4rem; }
+.eticket-route > div { display: flex; flex-direction: column; }
+.eticket-route .iata { font-size: 3rem; }
+.eticket-route .city { color: var(--muted); font-size: .9rem; }
+.eticket-route .time { font-weight: 700; color: var(--blue-700); }
+.eticket-arrow { font-size: 1.8rem; color: var(--blue-600); }
+.eticket-facts { display: grid; grid-template-columns: repeat(4, auto); gap: 1rem; margin: 1.4rem 0; }
+.eticket-facts dt { color: var(--muted); font-size: .78rem; }
+.eticket-facts dd { margin: 0; font-weight: 700; }
+.eticket-people { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+.eticket-people li { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: .4rem; }
+.eticket-people span { color: var(--muted); }
+.eticket-label { color: var(--muted); font-size: .78rem; }
+.eticket-stub .ref { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; letter-spacing: .08em; }
+.barcode { width: 100%; height: 3.2rem; color: var(--ink); }
+@media (max-width: 640px) {
+  .eticket { grid-template-columns: 1fr; }
+  .eticket-main { border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-right: 1px solid var(--line); }
+  .eticket-stub { border-left: 1px solid var(--line); border-top: 2px dashed var(--line-strong); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .eticket-facts { grid-template-columns: repeat(2, auto); }
+}
+@media print {
+  .site-header, .site-footer, .back-link, .btn, .fine-print { display: none !important; }
+  body { background: #fff; }
+  .eticket { filter: none; }
+}
+.pay-set + .demo-note { margin-top: 1.2rem; }

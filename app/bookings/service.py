@@ -12,6 +12,7 @@ import secrets
 
 from sqlalchemy import delete, select, update
 
+from app.bookings.payment import clean_method
 from app.extensions import db
 from app.models import Booking, Flight, Passenger, SeatAssignment, utcnow
 
@@ -44,7 +45,8 @@ def booking_problem(flight: Flight, passengers: int) -> str | None:
 
 
 def create_booking(user_id: int, flight_id: int, passengers: int,
-                   names: list[tuple[str, str]] | None = None) -> Booking:
+                   names: list[tuple[str, str]] | None = None,
+                   payment_method: str = "card") -> Booking:
     """`names` is an optional list of (first, last) pairs, one per passenger."""
     if not 1 <= passengers <= MAX_PASSENGERS:
         raise BookingError(f"Choose between 1 and {MAX_PASSENGERS} passengers.")
@@ -69,7 +71,8 @@ def create_booking(user_id: int, flight_id: int, passengers: int,
         raise BookingError("Sorry, those seats were just taken. Please search again.")
 
     booking = Booking(reference=new_reference(), user_id=user_id, flight_id=flight_id,
-                      passengers=passengers, total_cents=price_cents * passengers)
+                      passengers=passengers, total_cents=price_cents * passengers,
+                      payment_method=clean_method(payment_method))
     for position, (first, last) in enumerate(names or [], start=1):
         booking.travellers.append(Passenger(position=position, first_name=first, last_name=last))
     db.session.add(booking)

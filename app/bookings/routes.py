@@ -6,7 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.bookings import bp
+from app.bookings.barcode import bars, total_width
 from app.bookings.forms import BookingForm
+from app.bookings.notify import send_confirmation
+from app.bookings.payment import METHODS, clean_method
 from app.bookings.passengers import read_passengers, submitted_values
 from app.bookings.seats import (CAPACITY, EXIT_ROWS, LEFT, RIGHT, ROWS, choose_seats, is_valid_label,
                                 seat_problem, taken_seats)
@@ -78,12 +81,14 @@ def new(flight_id: int):
                 status = 400
             else:
                 try:
-                    booking = create_booking(current_user.id, flight.id, passengers, names)
+                    method = clean_method(request.form.get("payment_method"))
+                    booking = create_booking(current_user.id, flight.id, passengers, names, method)
                 except BookingError as error:
                     message, status = str(error), 400
                 else:
                     audit("booking_created", current_user,
                           f"{booking.reference} {flight.flight_no} x{passengers}")
+                    send_confirmation(booking)
                     flash("Booking confirmed. Your reference is " + booking.reference + ".", "success")
                     return redirect(url_for("bookings.detail", reference=booking.reference))
         else:
@@ -97,7 +102,8 @@ def new(flight_id: int):
     problem = message or booking_problem(flight, passengers)
     return render_template("bookings/checkout.html", flight=flight, form=form,
                            passengers=passengers, problem=problem,
-                           name_values=name_values, name_errors=name_errors,
+                           name_values=name_values, name_errors=name_errors, methods=METHODS,
+                           chosen_method=clean_method(request.form.get("payment_method")),
                            total_cents=flight.price_cents * passengers), status
 
 
@@ -105,6 +111,17 @@ def new(flight_id: int):
 @login_required
 def detail(reference: str):
     return render_template("bookings/detail.html", booking=_own_booking_or_404(reference))
+
+
+@bp.route("/<reference>/ticket")
+@login_required
+def ticket(reference: str):
+    """A printable e-ticket. Only the owner can open it, and a cancelled booking has none."""
+    booking = _own_booking_or_404(reference)
+    if booking.is_cancelled:
+        abort(404)
+    items = bars(booking.reference)
+    return render_template("bookings/ticket.html", booking=booking, bars=items, bar_width=total_width(items))
 
 
 @bp.route("/<reference>/cancel", methods=["POST"])
