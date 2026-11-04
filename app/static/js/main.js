@@ -177,6 +177,12 @@
     if (!panel || !layout || !lists.length) { return; }
 
     var sortBy = $("[data-sort]", panel);
+    function formatPrice(dollars, out) {
+      // Same format as the server: the amount is in US dollars, the page says how to show it.
+      var d = out.dataset;
+      var amount = Math.round(Number(dollars) * Number(d.rate || 1));
+      return (d.pre || "") + String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f") + (d.post || "");
+    }
     var priceMax = $("[data-price-max]", panel);
     var priceOut = $("[data-price-out]", panel);
     var bands = $$("[data-band]", panel);
@@ -230,7 +236,7 @@
         total += group.cards.length;
       });
 
-      if (priceMax && priceOut) { priceOut.textContent = "$" + priceMax.value; }
+      if (priceMax && priceOut) { priceOut.textContent = formatPrice(priceMax.value, priceOut); }
       if (count) { count.textContent = "Showing " + shown + " of " + total + " flight" + (total === 1 ? "" : "s"); }
     }
 

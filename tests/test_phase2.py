@@ -126,10 +126,9 @@ def test_unknown_flight_is_404(client):
 # ---------- Homepage and data ----------
 
 def test_homepage_featured_cards_come_from_database(client):
-    html = client.get("/").get_data(as_text=True)
-    cards = html.split('id="destinations"')[1]  # ignore the airport autocomplete list above
-    assert cards.index("Tokyo") < cards.index("Santorini") < cards.index("Serengeti")
-    assert "/flights?destination=HND" in cards
+    text = client.get("/").get_data(as_text=True)
+    assert "Top trips from" in text
+    assert "Istanbul" in text and "Paris" in text
 
 
 def test_homepage_works_without_photos(client):

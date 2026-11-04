@@ -54,9 +54,9 @@
         {% set lo = ns.lo // 100 %}{% set hi = (ns.hi + 99) // 100 %}
         {% if hi > lo %}
         <div class="filter-group">
-          <label for="price-max">Max price <output for="price-max" data-price-out>${{ hi }}</output></label>
+          <label for="price-max">Max price <output for="price-max" data-price-out data-rate="{{ slider_format().rate }}" data-pre="{{ slider_format().pre }}" data-post="{{ slider_format().post }}">{{ money(hi * 100) }}</output></label>
           <input id="price-max" type="range" min="{{ lo }}" max="{{ hi }}" step="1" value="{{ hi }}" data-price-max>
-          <div class="range-ends"><span>${{ lo }}</span><span>${{ hi }}</span></div>
+          <div class="range-ends"><span>{{ money(lo * 100) }}</span><span>{{ money(hi * 100) }}</span></div>
         </div>
         {% endif %}
 
@@ -91,27 +91,42 @@
           {% if flights %}
             <ul class="flight-list" data-leg>
               {% for f in flights %}
-              <li class="flight-card" data-airline="{{ f.airline_code or '' }}" data-price="{{ f.price_cents }}" data-depart="{{ f.departs_at.strftime('%H%M') }}" data-duration="{{ ((f.arrives_at - f.departs_at).total_seconds() // 60)|int }}">
-                <div class="flight-times">
-                  <span class="carrier-badge {{ f.airline.css_class if f.airline else '' }}" aria-hidden="true">{{ f.airline_code or 'SP' }}</span>
-                  <span class="time">{{ f.departs_at.strftime('%H:%M') }}</span>
-                  <span class="arrow" aria-hidden="true">&rarr;</span>
-                  <span class="time">{{ f.arrives_at.strftime('%H:%M') }}</span>
+              <li class="flight-card ticket" data-airline="{{ f.airline_code or '' }}" data-price="{{ f.price_cents }}" data-depart="{{ f.departs_at.strftime('%H%M') }}" data-duration="{{ ((f.arrives_at - f.departs_at).total_seconds() // 60)|int }}">
+                <div class="ticket-main">
+                  <strong class="sr-only">{{ f.origin.city }} to {{ f.destination.city }}</strong>
+                  <div class="ticket-route">
+                    <div class="ticket-end">
+                      <span class="iata">{{ f.origin_code }}</span>
+                      <span class="time">{{ f.departs_at.strftime('%H:%M') }}</span>
+                      <span class="city">{{ f.origin.city }}</span>
+                    </div>
+                    <div class="ticket-line" aria-hidden="true">
+                      <span class="duration">{{ f.duration_display }}</span>
+                      <span class="track"></span>
+                    </div>
+                    <div class="ticket-end ticket-end-to">
+                      <span class="iata">{{ f.destination_code }}</span>
+                      <span class="time">{{ f.arrives_at.strftime('%H:%M') }}</span>
+                      <span class="city">{{ f.destination.city }}</span>
+                    </div>
+                  </div>
+                  <p class="ticket-info">
+                    <span class="carrier-badge {{ f.airline.css_class if f.airline else '' }}" aria-hidden="true">{{ f.airline_code or 'SP' }}</span>
+                    <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ f.seats_available }} seats left</span>
+                    {% if f.airline %}<span class="operator">Operated by {{ f.airline.name }}</span>{% endif %}
+                    <span class="flight-tags">
+                      <span class="pill">Non-stop</span>
+                      {% if f.seats_available <= 10 %}<span class="pill pill-warn">Almost full</span>{% endif %}
+                    </span>
+                  </p>
                 </div>
-                <div class="flight-meta">
-                  <strong>{{ f.origin.city }} to {{ f.destination.city }}</strong>
-                  <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ f.seats_available }} seats left</span>
-                  {% if f.airline %}<span class="operator">Operated by {{ f.airline.name }}</span>{% endif %}
-                  <span class="flight-tags">
-                    <span class="pill">Non-stop</span>
-                    {% if f.seats_available <= 10 %}<span class="pill pill-warn">Almost full</span>{% endif %}
-                  </span>
+                <div class="ticket-stub">
+                  <div class="flight-price">
+                    <span class="price">{{ money(f.price_cents, 2) }}</span>
+                    <span class="per">per passenger</span>
+                  </div>
+                  <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id, passengers=query.passengers) }}">View details</a>
                 </div>
-                <div class="flight-price">
-                  <span class="price">{{ f.price_display }}</span>
-                  <span class="per">per passenger</span>
-                </div>
-                <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id, passengers=query.passengers) }}">View details</a>
               </li>
               {% endfor %}
             </ul>

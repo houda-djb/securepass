@@ -64,6 +64,9 @@ class Config:
     # SR9: redirect http to https and send HSTS (only switched on in ProductionConfig).
     FORCE_HTTPS = False
 
+    # Prices are stored in US dollars; this is the currency shown until the visitor picks one.
+    DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY", "DZD")
+
     # Largest request body we accept. Every form here is tiny, so a big body is an attack
     # or a mistake, never a real visitor.
     MAX_CONTENT_LENGTH = 100 * 1024
@@ -87,6 +90,7 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = normalise_database_url(
         os.environ.get("TEST_DATABASE_URL", "").strip() or "sqlite:///:memory:")
     SQLALCHEMY_ENGINE_OPTIONS = {}
+    DEFAULT_CURRENCY = "USD"      # the older tests were written with dollar prices
     # Switched off so most tests stay simple. Dedicated tests turn them back on.
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False

@@ -27,6 +27,42 @@ class Airport(db.Model):
     def label(self) -> str:
         return f"{self.city} ({self.code})"
 
+    @property
+    def tone(self) -> int:
+        """1 to 8: colour of the placeholder shown until a photo is added."""
+        return sum(ord(c) for c in self.slug) % 8 + 1
+
+
+class Country(db.Model):
+    """A country people can visit. Airports belong to it through the country name.
+
+    `best_months` and `styles` are short comma-separated lists ("5,6,7" and "beach,city"):
+    they drive "Where to go this season" and the "Plan by month" page. They are general
+    travel guidance, not a weather forecast.
+    """
+
+    __tablename__ = "countries"
+
+    slug = db.Column(db.String(40), primary_key=True)         # also the photo file name
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    blurb = db.Column(db.String(240), nullable=False, default="")
+    why = db.Column(db.String(160), nullable=False, default="")   # why go, and when
+    best_months = db.Column(db.String(40), nullable=False, default="")
+    styles = db.Column(db.String(80), nullable=False, default="")
+
+    @property
+    def months(self) -> list[int]:
+        return sorted(int(m) for m in self.best_months.split(",") if m.strip().isdigit())
+
+    @property
+    def style_list(self) -> list[str]:
+        return [s for s in self.styles.split(",") if s]
+
+    @property
+    def tone(self) -> int:
+        """1 to 8: picks the colour of the placeholder shown until a photo is added."""
+        return sum(ord(c) for c in self.slug) % 8 + 1
+
 
 class Airline(db.Model):
     """The company that operates a flight. Flight numbers keep the SecurePass "SP" prefix

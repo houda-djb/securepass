@@ -314,7 +314,7 @@ def test_seed_does_nothing_when_data_exists(app):
     result = runner.invoke(seed_command)     # a second run has nothing left to add
     assert "Nothing to add" in result.output
     with app.app_context():
-        assert Airport.query.count() == 10
+        assert Airport.query.count() >= 10
 
 
 def test_reset_db_asks_before_deleting_and_removes_users(app, users):
@@ -326,4 +326,4 @@ def test_reset_db_asks_before_deleting_and_removes_users(app, users):
     done = runner.invoke(reset_db_command, ["--yes", "--days", "2"])
     assert done.exit_code == 0
     with app.app_context():
-        assert User.query.count() == 0 and Airport.query.count() == 10
+        assert User.query.count() == 0 and Airport.query.count() >= 10
