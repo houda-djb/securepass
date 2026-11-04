@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Sales reports | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container admin-page">
+  <h1>Admin</h1>
+  {% set active = 'reports' %}{% include "admin/_nav.html" %}
+
+  <div class="toolbar">
+    <nav class="season-tabs" aria-label="Report period">
+      {% for r in ranges %}
+        <a href="{{ url_for('admin.sales_reports', days=r) }}" {% if r == key %}aria-current="true"{% endif %}>Last {{ r }} days</a>
+      {% endfor %}
+    </nav>
+    <a class="btn btn-ghost" href="{{ url_for('admin.export_bookings', days=key) }}">Download bookings (CSV)</a>
+  </div>
+
+  <dl class="detail-facts report-facts">
+    <div><dt>Confirmed bookings</dt><dd class="total">{{ totals.bookings }}</dd></div>
+    <div><dt>Revenue (demo)</dt><dd class="total">{{ money(totals.revenue_cents) }}</dd></div>
+    <div><dt>Passengers</dt><dd class="total">{{ totals.passengers }}</dd></div>
+    <div><dt>Average booking</dt><dd class="total">{{ money(totals.average_cents) }}</dd></div>
+    <div><dt>Cancellations</dt><dd class="total">{{ totals.cancelled }}</dd></div>
+    <div><dt>New accounts</dt><dd class="total">{{ totals.new_users }}</dd></div>
+  </dl>
+
+  <div class="report-grid">
+    <div>
+      <h2 class="detail-heading">By payment method</h2>
+      {% if methods %}
+      <table class="report-table">
+        <thead><tr><th scope="col">Method</th><th scope="col">Bookings</th><th scope="col">Revenue</th></tr></thead>
+        <tbody>{% for m in methods %}<tr><th scope="row">{{ m.label }}</th><td>{{ m.count }}</td><td>{{ money(m.cents) }}</td></tr>{% endfor %}</tbody>
+      </table>
+      {% else %}<p class="detail-note">No bookings in this period.</p>{% endif %}
+    </div>
+    <div>
+      <h2 class="detail-heading">Top routes</h2>
+      {% if routes %}
+      <table class="report-table">
+        <thead><tr><th scope="col">Route</th><th scope="col">Bookings</th><th scope="col">Revenue</th></tr></thead>
+        <tbody>{% for r in routes %}<tr><th scope="row">{{ r.route }}</th><td>{{ r.count }}</td><td>{{ money(r.cents) }}</td></tr>{% endfor %}</tbody>
+      </table>
+      {% else %}<p class="detail-note">No bookings in this period.</p>{% endif %}
+    </div>
+  </div>
+  <p class="fine-print">Amounts are demo figures shown in the currency you chose in the header. The CSV lists prices in US dollars.</p>
+</section>
+{% endblock %}

@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from decimal import Decimal
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import Response, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -13,6 +13,7 @@ from app.admin import bp
 from app.admin.forms import FlightForm
 from app.admin.queries import (EVENT_STYLES, EVENT_TYPES, bookings_per_day, build_chart,
                                dashboard_stats, locked_users, recent_events)
+from app.admin import reports
 from app.admin.scans import load_summary
 from app.extensions import db
 from app.models import Airline, Airport, Booking, Flight, User, utcnow
@@ -41,6 +42,23 @@ def index():
         event_styles=EVENT_STYLES,
         chosen=chosen if chosen in EVENT_TYPES else "",
     )
+
+
+@bp.route("/reports")
+def sales_reports():
+    key = reports.clean_range(request.args.get("days"))
+    return render_template("admin/reports.html", key=key, ranges=list(reports.RANGES),
+                           totals=reports.summary(key), methods=reports.by_payment_method(key),
+                           routes=reports.top_routes(key))
+
+
+@bp.route("/reports/bookings.csv")
+def export_bookings():
+    key = reports.clean_range(request.args.get("days"))
+    audit("report_exported", current_user, f"bookings last {key} days")
+    return Response(reports.bookings_csv(key), mimetype="text/csv", headers={
+        "Content-Disposition": f'attachment; filename="securepass-bookings-{key}d.csv"',
+        "Cache-Control": "no-store"})
 
 
 @bp.route("/users/<int:user_id>/unlock", methods=["POST"])
