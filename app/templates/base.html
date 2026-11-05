@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ current_lang() }}" dir="{{ lang_dir() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,12 +11,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">{{ _("Skip to content") }}</a>
   {% set endpoint = request.endpoint or '' %}
 
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="{{ url_for('main.index') }}" aria-label="SecurePass home">
+      <a class="brand" href="{{ url_for('main.index') }}" aria-label="{{ _("SecurePass home") }}">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" focusable="false">
             <path class="logo-shield" d="M12 1.5 3.5 4.8v6.4c0 5.1 3.6 9.5 8.5 11.3 4.9-1.8 8.5-6.2 8.5-11.3V4.8L12 1.5z"/>
@@ -26,36 +26,43 @@
         <span class="brand-name">SecurePass</span>
       </a>
 
-      <nav class="main-nav" aria-label="Main">
-        <a href="{{ url_for('flights.search') }}" {% if endpoint.startswith('flights.') %}aria-current="page"{% endif %}>Explore Flights</a>
-        <a href="{{ url_for('main.countries') }}" {% if endpoint in ('main.countries', 'main.country') %}aria-current="page"{% endif %}>Countries</a>
-        <a href="{{ url_for('main.plan') }}" {% if endpoint == 'main.plan' %}aria-current="page"{% endif %}>Plan by month</a>
+      <nav class="main-nav" aria-label="{{ _("Main") }}">
+        <a href="{{ url_for('flights.search') }}" {% if endpoint.startswith('flights.') %}aria-current="page"{% endif %}>{{ _("Explore Flights") }}</a>
+        <a href="{{ url_for('main.countries') }}" {% if endpoint in ('main.countries', 'main.country') %}aria-current="page"{% endif %}>{{ _("Countries") }}</a>
+        <a href="{{ url_for('main.plan') }}" {% if endpoint == 'main.plan' %}aria-current="page"{% endif %}>{{ _("Plan by month") }}</a>
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('bookings.index') }}" {% if endpoint.startswith('bookings.') %}aria-current="page"{% endif %}>My Bookings</a>
-          {% if current_user.is_admin %}<a href="{{ url_for('admin.index') }}" {% if endpoint.startswith('admin.') %}aria-current="page"{% endif %}>Admin</a>{% endif %}
+          <a href="{{ url_for('bookings.index') }}" {% if endpoint.startswith('bookings.') %}aria-current="page"{% endif %}>{{ _("My Bookings") }}</a>
+          {% if current_user.is_admin %}<a href="{{ url_for('admin.index') }}" {% if endpoint.startswith('admin.') %}aria-current="page"{% endif %}>{{ _("Admin") }}</a>{% endif %}
         {% endif %}
       </nav>
 
       <div class="auth-links">
-        <form class="currency-form" action="{{ url_for('main.choose_currency') }}" method="post" aria-label="Show prices in">
+        <form class="currency-form" action="{{ url_for('main.choose_currency') }}" method="post" aria-label="{{ _("Show prices in") }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
           {% for code in CURRENCIES %}
             <button type="submit" name="currency" value="{{ code }}" {% if code == current_currency() %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ code }}</button>
           {% endfor %}
         </form>
+        <form class="currency-form lang-form" action="{{ url_for('main.choose_language') }}" method="post" aria-label="{{ _('Language') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+          {% for code, info in LANGS.items() %}
+            <button type="submit" name="lang" value="{{ code }}" lang="{{ code }}" aria-label="{{ info[0] }}" aria-pressed="{{ 'true' if code == current_lang() else 'false' }}">{{ SHORT[code] }}</button>
+          {% endfor %}
+        </form>
         {% if current_user.is_authenticated %}
-          <a class="user-chip" href="{{ url_for('auth.account') }}" {% if endpoint == 'auth.account' %}aria-current="page"{% endif %} aria-label="My account">
+          <a class="user-chip" href="{{ url_for('auth.account') }}" {% if endpoint == 'auth.account' %}aria-current="page"{% endif %} aria-label="{{ _("My account") }}">
             <span class="avatar" aria-hidden="true">{{ current_user.email[:1]|upper }}</span>
             <span class="user-email">{{ current_user.email }}</span>
           </a>
           <form class="logout-form" action="{{ url_for('auth.logout') }}" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-ghost" type="submit">Log out</button>
+            <button class="btn btn-ghost" type="submit">{{ _("Log out") }}</button>
           </form>
         {% else %}
-          <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Log in</a>
-          <a class="btn btn-solid" href="{{ url_for('auth.register') }}">Register</a>
+          <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">{{ _("Log in") }}</a>
+          <a class="btn btn-solid" href="{{ url_for('auth.register') }}">{{ _("Register") }}</a>
         {% endif %}
       </div>
     </div>
@@ -78,7 +85,7 @@
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-brand">
-        <a class="brand" href="{{ url_for('main.index') }}" aria-label="SecurePass home">
+        <a class="brand" href="{{ url_for('main.index') }}" aria-label="{{ _("SecurePass home") }}">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
               <path class="logo-shield" d="M12 1.5 3.5 4.8v6.4c0 5.1 3.6 9.5 8.5 11.3 4.9-1.8 8.5-6.2 8.5-11.3V4.8L12 1.5z"/>
@@ -87,41 +94,41 @@
           </span>
           <span class="brand-name">SecurePass</span>
         </a>
-        <p>Book with confidence. Fly with security.</p>
+        <p>{{ _("Book with confidence. Fly with security.") }}</p>
       </div>
-      <nav aria-label="Explore">
-        <h2 class="footer-title">Explore</h2>
+      <nav aria-label="{{ _("Explore") }}">
+        <h2 class="footer-title">{{ _("Explore") }}</h2>
         <ul>
-          <li><a href="{{ url_for('flights.search') }}">Explore Flights</a></li>
-          <li><a href="{{ url_for('main.countries') }}">Countries</a></li>
-          <li><a href="{{ url_for('main.plan') }}">Plan by month</a></li>
+          <li><a href="{{ url_for('flights.search') }}">{{ _("Explore Flights") }}</a></li>
+          <li><a href="{{ url_for('main.countries') }}">{{ _("Countries") }}</a></li>
+          <li><a href="{{ url_for('main.plan') }}">{{ _("Plan by month") }}</a></li>
         </ul>
       </nav>
-      <nav aria-label="Account">
-        <h2 class="footer-title">Account</h2>
+      <nav aria-label="{{ _("Account") }}">
+        <h2 class="footer-title">{{ _("Account") }}</h2>
         <ul>
           {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('bookings.index') }}">My Bookings</a></li>
-            <li><a href="{{ url_for('auth.account') }}">My account</a></li>
-            {% if current_user.is_admin %}<li><a href="{{ url_for('admin.index') }}">Admin</a></li>{% endif %}
+            <li><a href="{{ url_for('bookings.index') }}">{{ _("My Bookings") }}</a></li>
+            <li><a href="{{ url_for('auth.account') }}">{{ _("My account") }}</a></li>
+            {% if current_user.is_admin %}<li><a href="{{ url_for('admin.index') }}">{{ _("Admin") }}</a></li>{% endif %}
           {% else %}
-            <li><a href="{{ url_for('auth.login') }}">Log in</a></li>
-            <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+            <li><a href="{{ url_for('auth.login') }}">{{ _("Log in") }}</a></li>
+            <li><a href="{{ url_for('auth.register') }}">{{ _("Register") }}</a></li>
           {% endif %}
         </ul>
       </nav>
       <div>
-        <h2 class="footer-title">Built secure</h2>
+        <h2 class="footer-title">{{ _("Built secure") }}</h2>
         <ul class="footer-facts">
-          <li>Protected accounts</li>
-          <li>Safe bookings</li>
-          <li>Audited security events</li>
+          <li>{{ _("Protected accounts") }}</li>
+          <li>{{ _("Safe bookings") }}</li>
+          <li>{{ _("Audited security events") }}</li>
         </ul>
       </div>
     </div>
     <div class="container footer-base">
-      <p>SecurePass is a final-year project. Demo data only: no real bookings or payments. Dinar and euro prices use fixed, indicative rates.</p>
-      <p>Fly safe.</p>
+      <p>{{ _("SecurePass is a final-year project. Demo data only: no real bookings or payments. Dinar and euro prices use fixed, indicative rates.") }}</p>
+      <p>{{ _("Fly safe.") }}</p>
     </div>
   </footer>
 

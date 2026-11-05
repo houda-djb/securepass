@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% from "_cards.html" import place_card %}
-{% block title %}Countries | SecurePass{% endblock %}
+{% block title %}{{ _("Countries") }} | SecurePass{% endblock %}
 
 {% block content %}
 <section class="page-head">
   <div class="container">
-    <h1>Countries</h1>
-    <p class="page-lead">{{ countries|length }} countries you can fly to. Open one to see its cities, the best time to go and the lowest fares from Alger.</p>
+    <h1>{{ _('Countries') }}</h1>
+    <p class="page-lead">{{ _('%(n)s countries you can fly to. Open one to see its cities, the best time to go and the lowest fares from Alger.', n=countries|length) }}</p>
   </div>
 </section>
 
 <section class="container page-body">
   <ul class="place-grid">
     {% for c in countries %}
-      {{ place_card(url_for('main.country', slug=c.slug), c.name, "Best " ~ best[c.slug],
-                    cities.get(c.name, [])|map(attribute='city')|join(', '), fares.get(c.slug), "countries/" ~ c.slug, c.tone) }}
+      {{ place_card(url_for('main.country', slug=c.slug), _(c.name), _("Best") ~ " " ~ translate_months(best[c.slug]),
+                    cities.get(c.name, [])|map(attribute='city')|map('translate')|join(', '), fares.get(c.slug), "countries/" ~ c.slug, c.tone) }}
     {% endfor %}
   </ul>
 </section>

@@ -84,6 +84,16 @@ def register_template_helpers(app: Flask) -> None:
     app.add_template_global(method_label, "method_label")
     app.add_template_global(CURRENCIES, "CURRENCIES")
 
+    from app import i18n
+    app.add_template_global(i18n.translate, "_")
+    app.add_template_global(i18n.translate_months, "translate_months")
+    app.add_template_global(i18n.long_date, "long_date")
+    app.add_template_global(i18n.current_lang, "current_lang")
+    app.add_template_global(i18n.lang_dir, "lang_dir")
+    app.add_template_global(i18n.LANGS, "LANGS")
+    app.add_template_global(i18n.SHORT, "SHORT")
+    app.add_template_filter(i18n.translate, "translate")
+
     @app.template_global()
     def photo_url(slug: str) -> str | None:
         """URL of static/img/destinations/<slug>.jpg, or None if no photo was added yet.

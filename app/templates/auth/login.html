@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Log in | SecurePass{% endblock %}
+{% block title %}{{ _("Log in") }} | SecurePass{% endblock %}
 
 {% block content %}
 <section class="container auth-page">
   <div class="auth-card">
-    <h1>Log in</h1>
-    <p class="auth-sub">Welcome back.</p>
+    <h1>{{ _('Log in') }}</h1>
+    <p class="auth-sub">{{ _('Welcome back.') }}</p>
 
     {% if error %}<div class="error-summary" role="alert">{{ error }}</div>{% endif %}
 
@@ -13,7 +13,7 @@
       {{ form.hidden_tag() }}
 
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">{{ _("Email") }}</label>
         <input id="email" name="email" type="email" autocomplete="username" maxlength="254" required
                value="{{ form.email.data or '' }}"
                {% if form.email.errors %}aria-invalid="true" aria-describedby="email-error"{% endif %}>
@@ -21,18 +21,18 @@
       </div>
 
       <div class="field">
-        <label for="password">Password</label>
+        <label for="password">{{ _("Password") }}</label>
         <input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required
                {% if form.password.errors %}aria-invalid="true" aria-describedby="password-error"{% endif %}>
         {% if form.password.errors %}<p class="field-error" id="password-error">{{ form.password.errors[0] }}</p>{% endif %}
       </div>
 
-      <p class="auth-forgot"><a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a></p>
+      <p class="auth-forgot"><a href="{{ url_for('auth.forgot_password') }}">{{ _('Forgot your password?') }}</a></p>
 
-      <button class="btn btn-solid btn-block" type="submit">Log in</button>
+      <button class="btn btn-solid btn-block" type="submit">{{ _("Log in") }}</button>
     </form>
 
-    <p class="auth-switch">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+    <p class="auth-switch">{{ _("New here?") }} <a href="{{ url_for('auth.register') }}">{{ _("Create an account") }}</a></p>
   </div>
 </section>
 {% endblock %}

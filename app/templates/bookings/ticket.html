@@ -3,40 +3,40 @@
 
 {% block content %}
 <section class="container detail">
-  <a class="back-link" href="{{ url_for('bookings.detail', reference=booking.reference) }}">&larr; Back to booking</a>
-  <h1>Your e-ticket</h1>
+  <a class="back-link" href="{{ url_for('bookings.detail', reference=booking.reference) }}"><span class="arrow" aria-hidden="true">&larr;</span> {{ _('Back to booking') }}</a>
+  <h1>{{ _('Your e-ticket') }}</h1>
 
   <article class="eticket" aria-label="E-ticket {{ booking.reference }}">
     <div class="eticket-main">
-      <p class="eticket-brand">SecurePass &middot; Boarding pass (demo)</p>
+      <p class="eticket-brand">{{ _('SecurePass · Boarding pass (demo)') }}</p>
       <div class="eticket-route">
-        <div><span class="iata">{{ booking.flight.origin.code }}</span><span class="city">{{ booking.flight.origin.city }}</span>
+        <div><span class="iata">{{ booking.flight.origin.code }}</span><span class="city">{{ _(booking.flight.origin.city) }}</span>
           <span class="time">{{ booking.flight.departs_at.strftime('%H:%M') }}</span></div>
-        <div class="eticket-arrow" aria-hidden="true">&rarr;</div>
-        <div class="to"><span class="iata">{{ booking.flight.destination.code }}</span><span class="city">{{ booking.flight.destination.city }}</span>
+        <div class="eticket-arrow" aria-hidden="true"><span class="arrow" aria-hidden="true">&rarr;</span></div>
+        <div class="to"><span class="iata">{{ booking.flight.destination.code }}</span><span class="city">{{ _(booking.flight.destination.city) }}</span>
           <span class="time">{{ booking.flight.arrives_at.strftime('%H:%M') }}</span></div>
       </div>
       <dl class="eticket-facts">
-        <div><dt>Flight</dt><dd>{{ booking.flight.flight_no }}</dd></div>
-        <div><dt>Date</dt><dd>{{ booking.flight.departs_at.strftime('%d %b %Y') }}</dd></div>
-        <div><dt>Passengers</dt><dd>{{ booking.passengers }}</dd></div>
-        <div><dt>Payment</dt><dd>{{ method_label(booking.payment_method) }}</dd></div>
+        <div><dt>{{ _('Flight') }}</dt><dd>{{ booking.flight.flight_no }}</dd></div>
+        <div><dt>{{ _('Date') }}</dt><dd>{{ booking.flight.departs_at.day }} {{ _(booking.flight.departs_at.strftime('%b')) }} {{ booking.flight.departs_at.year }}</dd></div>
+        <div><dt>{{ _('Passengers') }}</dt><dd>{{ booking.passengers }}</dd></div>
+        <div><dt>{{ _('Payment') }}</dt><dd>{{ _(method_label(booking.payment_method)) }}</dd></div>
       </dl>
       <ul class="eticket-people">
         {% for t in booking.travellers %}
-          <li>{{ t.full_name }}<span>{% if t.seat %}Seat {{ t.seat.label }}{% else %}Seat not chosen{% endif %}</span></li>
+          <li>{{ t.full_name }}<span>{% if t.seat %}{{ _('Seat %(label)s', label=t.seat.label) }}{% else %}{{ _('Seat not chosen') }}{% endif %}</span></li>
         {% endfor %}
       </ul>
     </div>
     <div class="eticket-stub">
-      <span class="eticket-label">Booking reference</span>
+      <span class="eticket-label">{{ _("Booking reference") }}</span>
       <span class="ref">{{ booking.reference }}</span>
       <svg class="barcode" viewBox="0 0 {{ bar_width }} 40" preserveAspectRatio="none" role="img" aria-label="Barcode for {{ booking.reference }}">
         {% for x, w in bars %}<rect x="{{ x }}" y="0" width="{{ w }}" height="40" fill="currentColor"/>{% endfor %}
       </svg>
     </div>
   </article>
-  <p class="fine-print">Demo ticket from a final-year project. It is not valid for travel.</p>
-  <p><button class="btn btn-solid" type="button" data-print>Print this ticket</button></p>
+  <p class="fine-print">{{ _('Demo ticket from a final-year project. It is not valid for travel.') }}</p>
+  <p><button class="btn btn-solid" type="button" data-print>{{ _('Print this ticket') }}</button></p>
 </section>
 {% endblock %}

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Search flights | SecurePass{% endblock %}
+{% block title %}{{ _("Search flights") }} | SecurePass{% endblock %}
 
 {% block content %}
 <section class="results-head">
   <div class="container">
-    <h1>Find your flight</h1>
+    <h1>{{ _('Find your flight') }}</h1>
     {% include "_search_form.html" %}
   </div>
 </section>
@@ -13,16 +13,16 @@
   {% if errors %}
     {% set step = 1 %}{% include "_stepper.html" %}
     <div class="error-summary" role="alert">
-      <strong>Please check your search:</strong>
+      <strong>{{ _('Please check your search:') }}</strong>
       <ul>
         {% for message in errors.values() %}<li>{{ message }}</li>{% endfor %}
       </ul>
     </div>
   {% elif outbound is not none %}
     {% set step = 2 %}{% include "_stepper.html" %}
-    {% set legs = [("Outbound", query.origin, query.destination, query.departure, outbound)] %}
+    {% set legs = [(_("Outbound"), query.origin, query.destination, query.departure, outbound)] %}
     {% if returning is not none %}
-      {% set legs = legs + [("Return", query.destination, query.origin, query.return_date, returning)] %}
+      {% set legs = legs + [(_("Return"), query.destination, query.origin, query.return_date, returning)] %}
     {% endif %}
 
     {# Price range for the filter sidebar, worked out from the flights actually shown. #}
@@ -39,38 +39,38 @@
     <div class="results-layout">
       {% if ns.count %}
       {# Hidden until main.js turns it on: the filters work on the flights already on the page. #}
-      <aside class="filters" aria-label="Filter and sort results" data-filters hidden>
-        <h2 class="filters-title">Filters</h2>
+      <aside class="filters" aria-label="{{ _('Filter and sort results') }}" data-filters hidden>
+        <h2 class="filters-title">{{ _("Filters") }}</h2>
 
         <div class="filter-group">
-          <label for="sort-by">Sort by</label>
+          <label for="sort-by">{{ _("Sort by") }}</label>
           <select id="sort-by" data-sort>
-            <option value="time">Departure time</option>
-            <option value="price">Lowest price</option>
-            <option value="duration">Shortest duration</option>
+            <option value="time">{{ _("Departure time") }}</option>
+            <option value="price">{{ _("Lowest price") }}</option>
+            <option value="duration">{{ _("Shortest duration") }}</option>
           </select>
         </div>
 
         {% set lo = ns.lo // 100 %}{% set hi = (ns.hi + 99) // 100 %}
         {% if hi > lo %}
         <div class="filter-group">
-          <label for="price-max">Max price <output for="price-max" data-price-out data-rate="{{ slider_format().rate }}" data-pre="{{ slider_format().pre }}" data-post="{{ slider_format().post }}">{{ money(hi * 100) }}</output></label>
+          <label for="price-max">{{ _("Max price") }} <output for="price-max" data-price-out data-rate="{{ slider_format().rate }}" data-pre="{{ slider_format().pre }}" data-post="{{ slider_format().post }}">{{ money(hi * 100) }}</output></label>
           <input id="price-max" type="range" min="{{ lo }}" max="{{ hi }}" step="1" value="{{ hi }}" data-price-max>
           <div class="range-ends"><span>{{ money(lo * 100) }}</span><span>{{ money(hi * 100) }}</span></div>
         </div>
         {% endif %}
 
         <fieldset class="filter-group">
-          <legend>Departure time</legend>
-          <label class="check"><input type="checkbox" value="morning" data-band checked> Morning <span>5am to 12pm</span></label>
-          <label class="check"><input type="checkbox" value="afternoon" data-band checked> Afternoon <span>12pm to 6pm</span></label>
-          <label class="check"><input type="checkbox" value="evening" data-band checked> Evening <span>6pm to 10pm</span></label>
-          <label class="check"><input type="checkbox" value="night" data-band checked> Night <span>10pm to 5am</span></label>
+          <legend>{{ _("Departure time") }}</legend>
+          <label class="check"><input type="checkbox" value="morning" data-band checked> {{ _("Morning") }} <span>{{ _("5am to 12pm") }}</span></label>
+          <label class="check"><input type="checkbox" value="afternoon" data-band checked> {{ _("Afternoon") }} <span>{{ _("12pm to 6pm") }}</span></label>
+          <label class="check"><input type="checkbox" value="evening" data-band checked> {{ _("Evening") }} <span>{{ _("6pm to 10pm") }}</span></label>
+          <label class="check"><input type="checkbox" value="night" data-band checked> {{ _("Night") }} <span>{{ _("10pm to 5am") }}</span></label>
         </fieldset>
 
         {% if ns.carriers|length > 1 %}
         <fieldset class="filter-group">
-          <legend>Airlines</legend>
+          <legend>{{ _("Airlines") }}</legend>
           {% for a in ns.carriers|sort(attribute='name') %}
           <label class="check"><input type="checkbox" value="{{ a.code }}" data-airline-filter checked>
             <span class="carrier-dot {{ a.css_class }}" aria-hidden="true"></span> {{ a.name }}</label>
@@ -78,27 +78,27 @@
         </fieldset>
         {% endif %}
 
-        <button class="btn btn-ghost btn-small" type="button" data-reset>Reset filters</button>
+        <button class="btn btn-ghost btn-small" type="button" data-reset>{{ _("Reset filters") }}</button>
         <p class="filters-count" aria-live="polite" data-count></p>
       </aside>
       {% endif %}
 
       <div class="results-main">
         {% for title, from_code, to_code, day, flights in legs %}
-          <h2 class="leg-title">{{ title }}: {{ from_code }} to {{ to_code }}
-            <span class="leg-date">{{ day.strftime('%A %d %B %Y') }}</span></h2>
+          <h2 class="leg-title">{{ title }}: {{ _('%(a)s to %(b)s', a=from_code, b=to_code) }}
+            <span class="leg-date">{{ long_date(day) }}</span></h2>
 
           {% if flights %}
             <ul class="flight-list" data-leg>
               {% for f in flights %}
               <li class="flight-card ticket" data-airline="{{ f.airline_code or '' }}" data-price="{{ f.price_cents }}" data-depart="{{ f.departs_at.strftime('%H%M') }}" data-duration="{{ ((f.arrives_at - f.departs_at).total_seconds() // 60)|int }}">
                 <div class="ticket-main">
-                  <strong class="sr-only">{{ f.origin.city }} to {{ f.destination.city }}</strong>
+                  <strong class="sr-only">{{ _('%(a)s to %(b)s', a=_(f.origin.city), b=_(f.destination.city)) }}</strong>
                   <div class="ticket-route">
                     <div class="ticket-end">
                       <span class="iata">{{ f.origin_code }}</span>
                       <span class="time">{{ f.departs_at.strftime('%H:%M') }}</span>
-                      <span class="city">{{ f.origin.city }}</span>
+                      <span class="city">{{ _(f.origin.city) }}</span>
                     </div>
                     <div class="ticket-line" aria-hidden="true">
                       <span class="duration">{{ f.duration_display }}</span>
@@ -107,38 +107,38 @@
                     <div class="ticket-end ticket-end-to">
                       <span class="iata">{{ f.destination_code }}</span>
                       <span class="time">{{ f.arrives_at.strftime('%H:%M') }}</span>
-                      <span class="city">{{ f.destination.city }}</span>
+                      <span class="city">{{ _(f.destination.city) }}</span>
                     </div>
                   </div>
                   <p class="ticket-info">
                     <span class="carrier-badge {{ f.airline.css_class if f.airline else '' }}" aria-hidden="true">{{ f.airline_code or 'SP' }}</span>
-                    <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ f.seats_available }} seats left</span>
-                    {% if f.airline %}<span class="operator">Operated by {{ f.airline.name }}</span>{% endif %}
+                    <span>{{ f.flight_no }} &middot; {{ f.duration_display }} &middot; {{ _('%(n)s seats left', n=f.seats_available) }}</span>
+                    {% if f.airline %}<span class="operator">{{ _("Operated by %(name)s", name=f.airline.name) }}</span>{% endif %}
                     <span class="flight-tags">
-                      <span class="pill">Non-stop</span>
-                      {% if f.seats_available <= 10 %}<span class="pill pill-warn">Almost full</span>{% endif %}
+                      <span class="pill">{{ _("Non-stop") }}</span>
+                      {% if f.seats_available <= 10 %}<span class="pill pill-warn">{{ _("Almost full") }}</span>{% endif %}
                     </span>
                   </p>
                 </div>
                 <div class="ticket-stub">
                   <div class="flight-price">
                     <span class="price">{{ money(f.price_cents, 2) }}</span>
-                    <span class="per">per passenger</span>
+                    <span class="per">{{ _("per passenger") }}</span>
                   </div>
-                  <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id, passengers=query.passengers) }}">View details</a>
+                  <a class="btn btn-solid" href="{{ url_for('flights.detail', flight_id=f.id, passengers=query.passengers) }}">{{ _('View details') }}</a>
                 </div>
               </li>
               {% endfor %}
             </ul>
           {% else %}
-            <p class="empty">No flights match this search. Try another date or fewer passengers.</p>
+            <p class="empty">{{ _('No flights match this search. Try another date or fewer passengers.') }}</p>
           {% endif %}
         {% endfor %}
       </div>
     </div>
   {% else %}
     {% set step = 1 %}{% include "_stepper.html" %}
-    <p class="empty">Enter your airports and dates above to see available flights.</p>
+    <p class="empty">{{ _('Enter your airports and dates above to see available flights.') }}</p>
   {% endif %}
 </section>
 {% endblock %}

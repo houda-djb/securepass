@@ -1,51 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Confirm your booking | SecurePass{% endblock %}
+{% block title %}{{ _("Confirm your booking") }} | SecurePass{% endblock %}
 
 {% block content %}
 <section class="container detail">
   {% set step = 3 %}{% include "_stepper.html" %}
-  <a class="back-link" href="{{ url_for('flights.detail', flight_id=flight.id, passengers=passengers) }}">&larr; Back to flight</a>
-  <h1>Confirm your booking</h1>
+  <a class="back-link" href="{{ url_for('flights.detail', flight_id=flight.id, passengers=passengers) }}"><span class="arrow" aria-hidden="true">&larr;</span> {{ _('Back to flight') }}</a>
+  <h1>{{ _('Confirm your booking') }}</h1>
 
   <div class="detail-card">
     <div class="detail-leg">
       <span class="time">{{ flight.departs_at.strftime('%H:%M') }}</span>
-      <span>{{ flight.origin.city }} ({{ flight.origin.code }})</span>
+      <span>{{ _(flight.origin.city) }} ({{ flight.origin.code }})</span>
     </div>
     <div class="detail-duration">{{ flight.flight_no }} &middot; {{ flight.duration_display }}</div>
     <div class="detail-leg">
       <span class="time">{{ flight.arrives_at.strftime('%H:%M') }}</span>
-      <span>{{ flight.destination.city }} ({{ flight.destination.code }})</span>
+      <span>{{ _(flight.destination.city) }} ({{ flight.destination.code }})</span>
     </div>
   </div>
-  <p class="detail-sub">{{ flight.departs_at.strftime('%A %d %B %Y') }}</p>
+  <p class="detail-sub">{{ long_date(flight.departs_at) }}</p>
 
   <dl class="detail-facts">
-    <div><dt>Passengers</dt><dd>{{ passengers }}</dd></div>
-    <div><dt>Price per passenger</dt><dd>{{ money(flight.price_cents, 2) }}</dd></div>
-    <div><dt>Total</dt><dd class="total">{{ money(total_cents, 2) }}</dd></div>
+    <div><dt>{{ _('Passengers') }}</dt><dd>{{ passengers }}</dd></div>
+    <div><dt>{{ _('Price per passenger') }}</dt><dd>{{ money(flight.price_cents, 2) }}</dd></div>
+    <div><dt>{{ _('Total') }}</dt><dd class="total">{{ money(total_cents, 2) }}</dd></div>
   </dl>
 
   {% if problem %}
     <div class="error-summary" role="alert">{{ problem }}</div>
-    <p><a class="btn btn-ghost" href="{{ url_for('flights.search') }}">Search other flights</a></p>
+    <p><a class="btn btn-ghost" href="{{ url_for('flights.search') }}">{{ _('Search other flights') }}</a></p>
   {% else %}
     <form method="post" action="{{ url_for('bookings.new', flight_id=flight.id) }}" novalidate>
       {{ form.hidden_tag() }}
 
       {% if name_errors %}
-        <div class="error-summary" role="alert">Please check the passenger names below.</div>
+        <div class="error-summary" role="alert">{{ _('Please check the passenger names below.') }}</div>
       {% endif %}
       <fieldset class="passenger-set">
-        <legend>Passenger details</legend>
-        <p class="field-hint">Enter each name as it appears on the travel document. Names only: no passport or card details are collected.</p>
+        <legend>{{ _('Passenger details') }}</legend>
+        <p class="field-hint">{{ _('Enter each name as it appears on the travel document. Names only: no passport or card details are collected.') }}</p>
         {% for n in range(1, passengers + 1) %}
         {% set first = 'first_name_' ~ n %}{% set last = 'last_name_' ~ n %}
         <div class="passenger-card">
-          <h3>Passenger {{ n }}{% if n == 1 %} <span class="badge badge-neutral">Lead</span>{% endif %}</h3>
+          <h3>{{ _("Passenger %(n)s", n=n) }}{% if n == 1 %} <span class="badge badge-neutral">{{ _("Lead") }}</span>{% endif %}</h3>
           <div class="passenger-grid">
             <div class="field">
-              <label for="{{ first }}">First name</label>
+              <label for="{{ first }}">{{ _("First name") }}</label>
               <input id="{{ first }}" name="{{ first }}" type="text" maxlength="40" required
                      autocomplete="{{ 'given-name' if n == 1 else 'off' }}"
                      value="{{ name_values.get(first, '') }}"
@@ -53,7 +53,7 @@
               {% if first in name_errors %}<p class="field-error" id="{{ first }}-error">{{ name_errors[first] }}</p>{% endif %}
             </div>
             <div class="field">
-              <label for="{{ last }}">Last name</label>
+              <label for="{{ last }}">{{ _("Last name") }}</label>
               <input id="{{ last }}" name="{{ last }}" type="text" maxlength="40" required
                      autocomplete="{{ 'family-name' if n == 1 else 'off' }}"
                      value="{{ name_values.get(last, '') }}"
@@ -66,19 +66,19 @@
       </fieldset>
 
       <fieldset class="pay-set">
-        <legend>Payment method</legend>
+        <legend>{{ _('Payment method') }}</legend>
         {% for key, info in methods.items() %}
         <label class="pay-option">
           <input type="radio" name="payment_method" value="{{ key }}" {% if key == chosen_method %}checked{% endif %}>
-          <span class="pay-text"><strong>{{ info[0] }}</strong><small>{{ info[1] }}</small></span>
+          <span class="pay-text"><strong>{{ _(info[0]) }}</strong><small>{{ _(info[1]) }}</small></span>
         </label>
         {% endfor %}
       </fieldset>
 
       <div class="demo-note">
-        <strong>Demo payment.</strong> No real payment is taken and no card details are collected.
+        <strong>{{ _('Demo payment.') }}</strong> {{ _('No real payment is taken and no card details are collected.') }}
       </div>
-      <button class="btn btn-solid" type="submit">Pay {{ money(total_cents, 2) }} (demo) and book</button>
+      <button class="btn btn-solid" type="submit">{{ _('Pay %(total)s (demo) and book', total=money(total_cents, 2)) }}</button>
     </form>
   {% endif %}
 </section>

@@ -6,6 +6,7 @@ from sqlalchemy import func, select, text
 from app.currency import CURRENCIES
 from app.extensions import db, limiter
 from app.main import bp
+from app.i18n import LANGS
 from app.main.seasons import (MONTH_NAMES, SEASON_ORDER, SEASONS, STYLES, best_time_text, clean_month,
                               clean_season, fits)
 from app.models import Airport, Country, Flight
@@ -119,6 +120,17 @@ def choose_currency():
     code = request.form.get("currency", "")
     if code in CURRENCIES:
         session["currency"] = code
+    target = request.form.get("next", "")
+    return redirect(target if is_safe_next(target) else url_for("main.index"))
+
+
+@bp.route("/language", methods=["POST"])
+@limiter.limit("60 per hour")
+def choose_language():
+    """Remember the visitor's language. Only the three known codes are accepted."""
+    code = request.form.get("lang", "")
+    if code in LANGS:
+        session["lang"] = code
     target = request.form.get("next", "")
     return redirect(target if is_safe_next(target) else url_for("main.index"))
 

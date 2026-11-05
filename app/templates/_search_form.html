@@ -1,21 +1,21 @@
 {# Shared by the homepage and the flights page. Needs: airports, values, errors #}
 <form class="search-card" action="{{ url_for('flights.search') }}" method="get" novalidate>
   <datalist id="airport-list">
-    {% for a in airports %}<option value="{{ a.code }}">{{ a.city }}, {{ a.country }}</option>{% endfor %}
+    {% for a in airports %}<option value="{{ a.code }}">{{ _(a.city) }}, {{ _(a.country) }}</option>{% endfor %}
   </datalist>
 
   {# The trip-type tabs and the swap button are switched on by main.js. Without JavaScript the
      form works exactly as before: the return date is simply optional. #}
-  <div class="trip-tabs" role="group" aria-label="Trip type" data-trip-tabs hidden>
-    <button class="trip-tab" type="button" data-trip="oneway" aria-pressed="false">One way</button>
-    <button class="trip-tab" type="button" data-trip="round" aria-pressed="true">Round trip</button>
-    <button class="trip-tab" type="button" disabled title="Multi-city search is planned for a later version">Multi-city <span class="soon">Soon</span></button>
+  <div class="trip-tabs" role="group" aria-label="{{ _('Trip type') }}" data-trip-tabs hidden>
+    <button class="trip-tab" type="button" data-trip="oneway" aria-pressed="false">{{ _("One way") }}</button>
+    <button class="trip-tab" type="button" data-trip="round" aria-pressed="true">{{ _("Round trip") }}</button>
+    <button class="trip-tab" type="button" disabled title="{{ _('Multi-city search is planned for a later version') }}">{{ _('Multi-city') }} <span class="soon">{{ _('Soon') }}</span></button>
   </div>
 
   <div class="search-fields" data-search-fields>
     <div class="route-pair">
       <div class="field">
-        <label for="origin">Origin</label>
+        <label for="origin">{{ _("Origin") }}</label>
         <div class="input-wrap">
           <svg class="icon field-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg>
           <input id="origin" name="origin" type="text" inputmode="text" maxlength="3" list="airport-list"
@@ -26,12 +26,12 @@
         {% if errors.origin %}<p class="field-error" id="origin-error">{{ errors.origin }}</p>{% endif %}
       </div>
 
-      <button class="swap-btn" type="button" data-swap aria-label="Swap origin and destination" hidden>
+      <button class="swap-btn" type="button" data-swap aria-label="{{ _('Swap origin and destination') }}" hidden>
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>
       </button>
 
       <div class="field">
-        <label for="destination">Destination</label>
+        <label for="destination">{{ _("Destination") }}</label>
         <div class="input-wrap">
           <svg class="icon field-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 22h20"/><path d="M3.77 10.77 2 9l2-4.5 1.1.55c.55.28.9.84.9 1.45s.35 1.17.9 1.45L8 8.5l3-6 1.05.53a2 2 0 0 1 1.09 1.52l.72 5.4a2 2 0 0 0 1.09 1.52l4.4 2.2c.42.22.78.55 1.01.96l.6 1.03c.49.88-.06 1.98-1.06 2.1l-1.18.15c-.47.06-.95-.02-1.37-.24L4.29 11.15a2 2 0 0 1-.52-.38Z"/></svg>
           <input id="destination" name="destination" type="text" inputmode="text" maxlength="3" list="airport-list"
@@ -44,7 +44,7 @@
     </div>
 
     <div class="field">
-      <label for="departure">Departure date</label>
+      <label for="departure">{{ _("Departure date") }}</label>
       <div class="input-wrap">
         <svg class="icon field-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg>
         <input id="departure" name="departure" type="date" required
@@ -55,7 +55,7 @@
     </div>
 
     <div class="field" data-return-field>
-      <label for="return">Return date <span class="optional">(optional)</span></label>
+      <label for="return">{{ _('Return date') }} <span class="optional">{{ _('(optional)') }}</span></label>
       <div class="input-wrap">
         <svg class="icon field-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg>
         <input id="return" name="return" type="date"
@@ -66,7 +66,7 @@
     </div>
 
     <div class="field field-narrow">
-      <label for="passengers">Passengers</label>
+      <label for="passengers">{{ _("Passengers") }}</label>
       <div class="input-wrap">
         <svg class="icon field-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c.8-3.6 3.9-5.5 7.5-5.5s6.7 1.9 7.5 5.5"/></svg>
         <input id="passengers" name="passengers" type="number" min="1" max="9" required
@@ -76,6 +76,6 @@
       {% if errors.passengers %}<p class="field-error" id="passengers-error">{{ errors.passengers }}</p>{% endif %}
     </div>
 
-    <button class="btn btn-solid btn-wide" type="submit" name="search" value="1">Search available flights</button>
+    <button class="btn btn-solid btn-wide" type="submit" name="search" value="1">{{ _("Search available flights") }}</button>
   </div>
 </form>

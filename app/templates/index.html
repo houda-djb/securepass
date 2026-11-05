@@ -1,58 +1,58 @@
 {% extends "base.html" %}
 {% from "_cards.html" import place_card %}
-{% block title %}SecurePass: flights from Algeria, with every price in view{% endblock %}
+{% block title %}{{ _("SecurePass: flights from Algeria, with every price in view") }}{% endblock %}
 
 {% block content %}
 {% set hero_photo = photo_url('hero') %}
 <section class="hero">
   {% if hero_photo %}<img class="hero-photo" src="{{ hero_photo }}" alt="" width="1920" height="1080">{% endif %}
   <div class="container hero-inner">
-    <h1>Where to next from Alger?</h1>
-    <p class="hero-sub">Prices in dinars, seats you choose yourself, and an account that stays yours.</p>
+    <h1>{{ _("Where to next from Alger?") }}</h1>
+    <p class="hero-sub">{{ _("Prices in dinars, seats you choose yourself, and an account that stays yours.") }}</p>
 
     {% include "_search_form.html" %}
 
     <ul class="trust-row">
-      <li><strong>{{ city_count }}</strong> cities</li>
-      <li><strong>{{ country_count }}</strong> countries</li>
-      <li>Prices in <strong>DZD, EUR or USD</strong></li>
-      <li>Two-step login available</li>
+      <li><strong>{{ city_count }}</strong> {{ _('cities') }}</li>
+      <li><strong>{{ country_count }}</strong> {{ _('countries') }}</li>
+      <li>{{ _('Prices in') }} <strong>DZD, EUR, USD</strong></li>
+      <li>{{ _("Two-step login available") }}</li>
     </ul>
   </div>
 </section>
 
 <section class="seasonal container" id="seasons" aria-labelledby="seasons-title">
   <div class="section-head">
-    <h2 id="seasons-title">Where to go this {{ season }}</h2>
-    <a class="view-all" href="{{ url_for('main.plan') }}">Plan by month &rarr;</a>
+    <h2 id="seasons-title">{{ _('Where to go this %(season)s', season=_(season)) }}</h2>
+    <a class="view-all" href="{{ url_for('main.plan') }}">{{ _('Plan by month') }} <span class="arrow" aria-hidden="true">&rarr;</span></a>
   </div>
-  <nav class="season-tabs" aria-label="Choose a season">
+  <nav class="season-tabs" aria-label="{{ _('Choose a season') }}">
     {% for s in seasons %}
-      <a href="{{ url_for('main.index', season=s) }}#seasons" {% if s == season %}aria-current="true"{% endif %}>{{ s|capitalize }}</a>
+      <a href="{{ url_for('main.index', season=s) }}#seasons" {% if s == season %}aria-current="true"{% endif %}>{{ _(s|capitalize) }}</a>
     {% endfor %}
   </nav>
   {% if in_season %}
   <ul class="place-grid has-lead">
     {% for c in in_season %}
-      {{ place_card(url_for('main.country', slug=c.slug), c.name, "Best " ~ best_time[c.slug], c.why,
+      {{ place_card(url_for('main.country', slug=c.slug), _(c.name), _("Best") ~ " " ~ translate_months(best_time[c.slug]), c.why,
                     country_fares.get(c.slug), "countries/" ~ c.slug, c.tone, "", loop.first) }}
     {% endfor %}
   </ul>
-  <p class="fine-print">General travel guidance, not a weather forecast. Flight prices are the lowest fares from Alger.</p>
+  <p class="fine-print">{{ _('General travel guidance, not a weather forecast. Flight prices are the lowest fares from Alger.') }}</p>
   {% else %}
-  <p class="empty">No countries are listed for this season yet.</p>
+  <p class="empty">{{ _("No countries are listed for this season yet.") }}</p>
   {% endif %}
 </section>
 
 {% if top_trips %}
 <section class="trips container" aria-labelledby="trips-title">
   <div class="section-head">
-    <h2 id="trips-title">Top trips from {{ home.city if home else 'Alger' }}</h2>
-    <a class="view-all" href="{{ url_for('main.countries') }}">All countries &rarr;</a>
+    <h2 id="trips-title">{{ _('Top trips from %(city)s', city=_(home.city if home else 'Alger')) }}</h2>
+    <a class="view-all" href="{{ url_for('main.countries') }}">{{ _('All countries') }} <span class="arrow" aria-hidden="true">&rarr;</span></a>
   </div>
   <ul class="place-grid trips-grid">
     {% for a in top_trips %}
-      {{ place_card(url_for('flights.search', origin='ALG', destination=a.code), a.city, a.country, "",
+      {{ place_card(url_for('flights.search', origin='ALG', destination=a.code), _(a.city), _(a.country), "",
                     home_fares.get(a.code), a.slug, a.tone, art_class(a.slug)) }}
     {% endfor %}
   </ul>
@@ -60,34 +60,34 @@
 {% endif %}
 
 <section class="how container" aria-labelledby="how-title">
-  <h2 class="section-title" id="how-title">How booking works</h2>
-  <p class="section-lead">Four clear steps from search to boarding pass, with nothing hidden.</p>
+  <h2 class="section-title" id="how-title">{{ _("How booking works") }}</h2>
+  <p class="section-lead">{{ _("Four clear steps from search to boarding pass, with nothing hidden.") }}</p>
   <ol class="steps">
-    <li><h3>Search</h3><p>Pick your airports, dates and passengers. Results come back quickly, with every price shown up front.</p></li>
-    <li><h3>Choose</h3><p>Compare times, duration, price and seats left, then open the flight details.</p></li>
-    <li><h3>Confirm</h3><p>Choose your seats, review the total and finish with a demo payment. No card details are ever collected.</p></li>
-    <li><h3>Manage</h3><p>Find every booking in your account, each with a private reference code, and cancel from there.</p></li>
+    <li><h3>{{ _("Search") }}</h3><p>{{ _("Pick your airports, dates and passengers. Results come back quickly, with every price shown up front.") }}</p></li>
+    <li><h3>{{ _("Choose") }}</h3><p>{{ _("Compare times, duration, price and seats left, then open the flight details.") }}</p></li>
+    <li><h3>{{ _("Confirm") }}</h3><p>{{ _("Choose your seats, review the total and finish with a demo payment. No card details are ever collected.") }}</p></li>
+    <li><h3>{{ _("Manage") }}</h3><p>{{ _("Find every booking in your account, each with a private reference code, and cancel from there.") }}</p></li>
   </ol>
 </section>
 
 <section class="features container" aria-labelledby="security-title">
-  <h2 class="section-title" id="security-title">Security you can see</h2>
-  <p class="section-lead">The same care that goes into your trip goes into protecting your account and your bookings.</p>
+  <h2 class="section-title" id="security-title">{{ _("Security you can see") }}</h2>
+  <p class="section-lead">{{ _("The same care that goes into your trip goes into protecting your account and your bookings.") }}</p>
   <div class="feature-grid">
     <article class="feature">
       <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></div>
-      <h3>Protected accounts</h3>
-      <p>Passwords are stored as salted hashes, wrong guesses lock the account for 15 minutes, and you can add a second step with an authenticator app.</p>
+      <h3>{{ _("Protected accounts") }}</h3>
+      <p>{{ _("Passwords are stored as salted hashes, wrong guesses lock the account for 15 minutes, and you can add a second step with an authenticator app.") }}</p>
     </article>
     <article class="feature">
       <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></div>
-      <h3>Safe bookings</h3>
-      <p>Every action is protected against forged requests, and seats are reserved in one step so none are sold twice.</p>
+      <h3>{{ _("Safe bookings") }}</h3>
+      <p>{{ _("Every action is protected against forged requests, and seats are reserved in one step so none are sold twice.") }}</p>
     </article>
     <article class="feature">
       <div class="feature-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
-      <h3>Always watched</h3>
-      <p>Logins, bookings and denied access are written to an audit log that administrators can review.</p>
+      <h3>{{ _("Always watched") }}</h3>
+      <p>{{ _("Logins, bookings and denied access are written to an audit log that administrators can review.") }}</p>
     </article>
   </div>
 </section>
