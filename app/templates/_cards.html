@@ -12,7 +12,7 @@
       {% if kicker %}<span class="place-kicker">{{ kicker }}</span>{% endif %}
       <span class="place-title">{{ title }}</span>
       {% if text %}<span class="place-text">{{ text }}</span>{% endif %}
-      {% if price %}<span class="place-price">From <strong>{{ money(price) }}</strong></span>{% endif %}
+      {% if price %}<span class="place-price">{{ _('From') }} <strong>{{ money(price) }}</strong></span>{% endif %}
     </span>
   </a>
 </li>

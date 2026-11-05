@@ -1,37 +1,37 @@
 {% extends "base.html" %}
 {% from "_cards.html" import place_card %}
-{% block title %}Plan by month | SecurePass{% endblock %}
+{% block title %}{{ _("Plan by month") }} | SecurePass{% endblock %}
 
 {% block content %}
 <section class="page-head">
   <div class="container">
-    <h1>Where to go in {{ month_name }}</h1>
-    <p class="page-lead">Pick a month and, if you like, the kind of trip. General travel guidance, not a weather forecast.</p>
+    <h1>{{ _('Where to go in %(month)s', month=_(month_name)) }}</h1>
+    <p class="page-lead">{{ _('Pick a month and, if you like, the kind of trip. General travel guidance, not a weather forecast.') }}</p>
   </div>
 </section>
 
 <section class="container page-body">
-  <nav class="month-tabs" aria-label="Choose a month">
+  <nav class="month-tabs" aria-label="{{ _('Choose a month') }}">
     {% for name in months %}
-      <a href="{{ url_for('main.plan', month=loop.index, **{'style': style or none}) }}" {% if loop.index == month %}aria-current="true"{% endif %}>{{ name[:3] }}</a>
+      <a href="{{ url_for('main.plan', month=loop.index, **{'style': style or none}) }}" {% if loop.index == month %}aria-current="true"{% endif %}>{{ _(name[:3]) }}</a>
     {% endfor %}
   </nav>
-  <nav class="season-tabs style-tabs" aria-label="Choose a kind of trip">
-    <a href="{{ url_for('main.plan', month=month) }}" {% if not style %}aria-current="true"{% endif %}>Any trip</a>
+  <nav class="season-tabs style-tabs" aria-label="{{ _('Choose a kind of trip') }}">
+    <a href="{{ url_for('main.plan', month=month) }}" {% if not style %}aria-current="true"{% endif %}>{{ _('Any trip') }}</a>
     {% for key, label in styles.items() %}
-      <a href="{{ url_for('main.plan', month=month, **{'style': key}) }}" {% if key == style %}aria-current="true"{% endif %}>{{ label }}</a>
+      <a href="{{ url_for('main.plan', month=month, **{'style': key}) }}" {% if key == style %}aria-current="true"{% endif %}>{{ _(label) }}</a>
     {% endfor %}
   </nav>
 
   {% if matches %}
   <ul class="place-grid">
     {% for c in matches %}
-      {{ place_card(url_for('main.country', slug=c.slug), c.name, "Best " ~ best[c.slug], c.why, fares.get(c.slug),
+      {{ place_card(url_for('main.country', slug=c.slug), _(c.name), _("Best") ~ " " ~ translate_months(best[c.slug]), c.why, fares.get(c.slug),
                     "countries/" ~ c.slug, c.tone) }}
     {% endfor %}
   </ul>
   {% else %}
-  <p class="empty">Nothing matches {{ month_name }} with that kind of trip. Try another month or choose "Any trip".</p>
+  <p class="empty">{{ _('Nothing matches %(month)s with that kind of trip. Try another month or choose "Any trip".', month=_(month_name)) }}</p>
   {% endif %}
 </section>
 {% endblock %}

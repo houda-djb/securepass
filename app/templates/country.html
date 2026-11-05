@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% from "_cards.html" import place_card %}
-{% block title %}{{ country.name }} | SecurePass{% endblock %}
+{% block title %}{{ _(country.name) }} | SecurePass{% endblock %}
 
 {% block content %}
 {% set photo = photo_url("countries/" ~ country.slug) %}
 <section class="country-hero tone-{{ country.tone }}">
   {% if photo %}<img class="country-photo" src="{{ photo }}" alt="" width="1920" height="900">{% endif %}
   <div class="container country-hero-inner">
-    <a class="back-link" href="{{ url_for('main.countries') }}">&larr; All countries</a>
-    <h1>{{ country.name }}</h1>
+    <a class="back-link" href="{{ url_for('main.countries') }}"><span class="arrow" aria-hidden="true">&larr;</span> {{ _('All countries') }}</a>
+    <h1>{{ _(country.name) }}</h1>
     <p class="country-blurb">{{ country.blurb }}</p>
   </div>
 </section>
@@ -16,25 +16,25 @@
 <section class="container country-body">
   <div class="country-facts">
     <div>
-      <h2>Best time to go</h2>
-      <p class="big">{{ best }}</p>
+      <h2>{{ _('Best time to go') }}</h2>
+      <p class="big">{{ translate_months(best) }}</p>
       <p>{{ country.why }}</p>
     </div>
     <div>
-      <h2>Good for</h2>
-      <ul class="chips">{% for s in styles %}<li>{{ s }}</li>{% endfor %}</ul>
-      <p class="fine-print">General travel guidance, not a weather forecast.</p>
+      <h2>{{ _('Good for') }}</h2>
+      <ul class="chips">{% for s in styles %}<li>{{ _(s) }}</li>{% endfor %}</ul>
+      <p class="fine-print">{{ _('General travel guidance, not a weather forecast.') }}</p>
     </div>
   </div>
 
   <div class="section-head">
-    <h2>Cities you can fly to</h2>
-    <a class="view-all" href="{{ url_for('main.plan', month=country.months[0] if country.months else none) }}">More places for this month &rarr;</a>
+    <h2>{{ _('Cities you can fly to') }}</h2>
+    <a class="view-all" href="{{ url_for('main.plan', month=country.months[0] if country.months else none) }}">{{ _('More places for this month') }} <span class="arrow" aria-hidden="true">&rarr;</span></a>
   </div>
   <ul class="place-grid">
     {% for a in airports %}
       {{ place_card(url_for('flights.search', origin='ALG', destination=a.code) if a.code != 'ALG' else url_for('flights.search', destination='ALG'),
-                    a.city, a.code ~ " · " ~ a.name, a.blurb, fares.get(a.code), a.slug, a.tone, art_class(a.slug)) }}
+                    _(a.city), a.code ~ " · " ~ a.name, a.blurb, fares.get(a.code), a.slug, a.tone, art_class(a.slug)) }}
     {% endfor %}
   </ul>
 </section>

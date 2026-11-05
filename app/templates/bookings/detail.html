@@ -3,51 +3,51 @@
 
 {% block content %}
 <section class="container detail">
-  <a class="back-link" href="{{ url_for('bookings.index') }}">&larr; All my bookings</a>
+  <a class="back-link" href="{{ url_for('bookings.index') }}"><span class="arrow" aria-hidden="true">&larr;</span> {{ _('All my bookings') }}</a>
 
   <h1>Booking <span class="ref">{{ booking.reference }}</span>
-    <span class="badge badge-{{ booking.status }}">{{ booking.status|capitalize }}</span></h1>
+    <span class="badge badge-{{ booking.status }}">{{ _(booking.status|capitalize) }}</span></h1>
   <p class="detail-sub">
-    {{ booking.flight.origin.city }} to {{ booking.flight.destination.city }} &middot;
-    {{ booking.flight.departs_at.strftime('%A %d %B %Y') }}
+    {{ _('%(a)s to %(b)s', a=_(booking.flight.origin.city), b=_(booking.flight.destination.city)) }} &middot;
+    {{ long_date(booking.flight.departs_at) }}
   </p>
 
   <div class="detail-card">
     <div class="detail-leg">
       <span class="time">{{ booking.flight.departs_at.strftime('%H:%M') }}</span>
-      <span>{{ booking.flight.origin.name }}, {{ booking.flight.origin.city }} ({{ booking.flight.origin.code }})</span>
+      <span>{{ booking.flight.origin.name }}, {{ _(booking.flight.origin.city) }} ({{ booking.flight.origin.code }})</span>
     </div>
     <div class="detail-duration">{{ booking.flight.flight_no }} &middot; {{ booking.flight.duration_display }}{% if booking.flight.airline %}<span class="detail-operator">Operated by {{ booking.flight.airline.name }}</span>{% endif %}</div>
     <div class="detail-leg">
       <span class="time">{{ booking.flight.arrives_at.strftime('%H:%M') }}</span>
-      <span>{{ booking.flight.destination.name }}, {{ booking.flight.destination.city }} ({{ booking.flight.destination.code }})</span>
+      <span>{{ booking.flight.destination.name }}, {{ _(booking.flight.destination.city) }} ({{ booking.flight.destination.code }})</span>
     </div>
   </div>
 
   <dl class="detail-facts">
-    <div><dt>Passengers</dt><dd>{{ booking.passengers }}</dd></div>
-    <div><dt>Total (demo)</dt><dd class="total">{{ money(booking.total_cents, 2) }}</dd></div>
-    <div><dt>Payment (demo)</dt><dd>{{ method_label(booking.payment_method) }}</dd></div>
-    <div><dt>Booked on</dt><dd>{{ booking.created_at.strftime('%d %b %Y, %H:%M') }} UTC</dd></div>
+    <div><dt>{{ _('Passengers') }}</dt><dd>{{ booking.passengers }}</dd></div>
+    <div><dt>{{ _('Total (demo)') }}</dt><dd class="total">{{ money(booking.total_cents, 2) }}</dd></div>
+    <div><dt>{{ _('Payment (demo)') }}</dt><dd>{{ _(method_label(booking.payment_method)) }}</dd></div>
+    <div><dt>{{ _('Booked on') }}</dt><dd>{{ booking.created_at.strftime('%d %b %Y, %H:%M') }} UTC</dd></div>
   </dl>
 
   {% if not booking.is_cancelled %}
-  <p><a class="btn btn-ghost" href="{{ url_for('bookings.ticket', reference=booking.reference) }}">View e-ticket</a></p>
+  <p><a class="btn btn-ghost" href="{{ url_for('bookings.ticket', reference=booking.reference) }}">{{ _('View e-ticket') }}</a></p>
   {% endif %}
 
-  <h2 class="detail-heading">Passengers</h2>
+  <h2 class="detail-heading">{{ _("Passengers") }}</h2>
   {% if booking.travellers %}
     <ol class="traveller-list">
       {% for t in booking.travellers %}
       <li>
-        <span class="traveller-name">{{ t.full_name }}</span>{% if loop.first %} <span class="badge badge-neutral">Lead</span>{% endif %}
-        {% if t.seat %}<span class="seat-tag">Seat {{ t.seat.label }}</span>{% else %}<span class="seat-tag seat-tag-empty">No seat chosen</span>{% endif %}
+        <span class="traveller-name">{{ t.full_name }}</span>{% if loop.first %} <span class="badge badge-neutral">{{ _("Lead") }}</span>{% endif %}
+        {% if t.seat %}<span class="seat-tag">{{ _("Seat %(label)s", label=t.seat.label) }}</span>{% else %}<span class="seat-tag seat-tag-empty">{{ _("No seat chosen") }}</span>{% endif %}
       </li>
       {% endfor %}
     </ol>
     {% if booking.can_cancel %}
       <p><a class="btn btn-solid" href="{{ url_for('bookings.seats', reference=booking.reference) }}">
-        {{ 'Change seats' if booking.travellers|selectattr('seat')|list else 'Choose seats' }}</a></p>
+        {{ _('Change seats') if booking.travellers|selectattr('seat')|list else _('Choose seats') }}</a></p>
     {% endif %}
   {% else %}
     <p class="detail-note">No passenger names were saved with this booking.</p>
@@ -56,7 +56,7 @@
   {% if booking.can_cancel %}
     <form method="post" action="{{ url_for('bookings.cancel', reference=booking.reference) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn-danger" type="submit">Cancel this booking</button>
+      <button class="btn btn-danger" type="submit">{{ _("Cancel this booking") }}</button>
     </form>
   {% elif booking.is_cancelled %}
     <p class="detail-note">This booking was cancelled{% if booking.cancelled_at %} on {{ booking.cancelled_at.strftime('%d %b %Y, %H:%M') }} UTC{% endif %}. Its seats were released.</p>

@@ -113,11 +113,11 @@ img, svg { max-width: 100%; }
 :focus-visible { outline: 3px solid var(--blue-500); outline-offset: 2px; border-radius: 4px; }
 
 .skip-link {
-  position: absolute; left: -999px; top: 0;
+  position: absolute; left: 0; top: 0; transform: translateY(-120%);
   background: var(--blue-600); color: #fff; padding: .6rem 1rem; z-index: 100;
   border-radius: 0 0 var(--radius-sm) 0;
 }
-.skip-link:focus { left: 0; }
+.skip-link:focus { transform: none; }
 
 /* ---------- Icons ---------- */
 .icon {
@@ -1144,3 +1144,33 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.02em; }
 .report-table tbody th { font-weight: 600; }
 .report-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 800px) { .report-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .report-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Languages and right-to-left (Phase 24) ---------- */
+.lang-form button { min-width: 2rem; }
+.arrow { display: inline-block; }
+:root[lang="ar"] { --font-sans: "Segoe UI", Tahoma, "Noto Sans Arabic", "Hanken Grotesk", system-ui, sans-serif; --font-display: "Segoe UI", Tahoma, "Noto Sans Arabic", "Bricolage Grotesque", system-ui, sans-serif; }
+:root[lang="ar"] h1, :root[lang="ar"] h2, :root[lang="ar"] h3, :root[lang="ar"] .hero h1 { letter-spacing: 0; line-height: 1.25; }
+:root[lang="ar"] .main-nav a, :root[lang="ar"] .btn { letter-spacing: 0; }
+[dir="rtl"] .arrow { transform: scaleX(-1); }
+[dir="rtl"] .hero::before { transform: scaleX(-1); background-position: left center; }
+[dir="rtl"] .hero:has(.hero-photo)::before { transform: none; background: linear-gradient(270deg, rgba(5, 24, 34, .82) 0%, rgba(5, 24, 34, .45) 55%, rgba(5, 24, 34, .15) 100%); }
+[dir="rtl"] .country-hero::after { background: linear-gradient(270deg, rgba(5, 24, 34, .85) 0%, rgba(5, 24, 34, .35) 70%, rgba(5, 24, 34, .1) 100%); }
+[dir="rtl"] .ticket-main { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; border-right: 1px solid var(--line); border-left: 0; }
+[dir="rtl"] .ticket-stub { border-radius: var(--radius-lg) 0 0 var(--radius-lg); border-left: 1px solid var(--line); border-right: 2px dashed var(--line-strong); }
+[dir="rtl"] .ticket-stub::before, [dir="rtl"] .ticket-stub::after { left: auto; right: -11px; }
+[dir="rtl"] .ticket-end-to { align-items: flex-start; text-align: left; }
+[dir="rtl"] .ticket-stub .flight-price { align-items: flex-end; text-align: right; }
+[dir="rtl"] .ticket-line .track::after { right: auto; left: -2px; transform: scaleX(-1); }
+[dir="rtl"] .ticket-line .track::before { left: auto; right: 0; }
+[dir="rtl"] .place-price { border-radius: 8px 999px 999px 8px; }
+[dir="rtl"] .eticket-main { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; border-left: 1px solid var(--line); border-right: 0; }
+[dir="rtl"] .eticket-stub { border-radius: var(--radius-lg) 0 0 var(--radius-lg); border-right: 2px dashed var(--line-strong); border-left: 1px solid var(--line); }
+[dir="rtl"] input[type="email"], [dir="rtl"] input[type="password"], [dir="rtl"] input[name="origin"], [dir="rtl"] input[name="destination"] { direction: ltr; text-align: right; }
+@media (max-width: 720px) {
+  [dir="rtl"] .ticket-main { border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-right: 1px solid var(--line); border-left: 1px solid var(--line); }
+  [dir="rtl"] .ticket-stub { border-radius: 0 0 var(--radius-lg) var(--radius-lg); border-right: 1px solid var(--line); border-left: 1px solid var(--line); border-top: 2px dashed var(--line-strong); }
+}
+@media (max-width: 640px) {
+  [dir="rtl"] .eticket-main { border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-right: 1px solid var(--line); }
+  [dir="rtl"] .eticket-stub { border-radius: 0 0 var(--radius-lg) var(--radius-lg); border-right: 1px solid var(--line); border-top: 2px dashed var(--line-strong); }
+}
