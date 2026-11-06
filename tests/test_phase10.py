@@ -172,7 +172,7 @@ def test_cancelling_frees_the_seats(app, client, users):
     one, two, _ = free(app, flight)
     client.post(f"/bookings/{reference}/seats", data={"seat_1": one, "seat_2": two})
     assert seats_of(app, reference) == {1: one, 2: two}
-    assert client.post(f"/bookings/{reference}/cancel").status_code == 302
+    assert client.post(f"/bookings/{reference}/cancel", data={"reason": "plans", "password": "Correct-horse-42"}).status_code == 302
     with app.app_context():
         assert SeatAssignment.query.count() == 0
     again = client.get(f"/bookings/{reference}/seats")
@@ -186,7 +186,7 @@ def test_cancelling_frees_the_seats(app, client, users):
 def test_a_cancelled_booking_cannot_pick_seats(app, client, users):
     login(client)
     reference = book(client, a_flight(app))
-    client.post(f"/bookings/{reference}/cancel")
+    client.post(f"/bookings/{reference}/cancel", data={"reason": "plans", "password": "Correct-horse-42"})
     res = client.post(f"/bookings/{reference}/seats", data={"seat_1": "2A"})
     assert seats_of(app, reference) == {1: None, 2: None}
     assert res.status_code in (200, 400)

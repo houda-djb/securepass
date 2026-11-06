@@ -8,14 +8,16 @@ from sqlalchemy.orm import joinedload, selectinload
 from app.bookings import bp
 from app.bookings.barcode import bars, total_width
 from app.bookings.forms import BookingForm
-from app.bookings.notify import send_confirmation
+from app.bookings.cancellation import BURST_LIMIT, REASONS, clean_reason, recent_cancellations, too_many_recent
+from app.bookings.notify import send_cancellation_notice, send_confirmation
 from app.bookings.payment import METHODS, clean_method
 from app.bookings.passengers import read_passengers, submitted_values
 from app.bookings.seats import (CAPACITY, EXIT_ROWS, LEFT, RIGHT, ROWS, choose_seats, is_valid_label,
                                 seat_problem, taken_seats)
 from app.bookings.service import (MAX_PASSENGERS, BookingError, booking_problem, cancel_booking,
                                   create_booking)
-from app.extensions import db
+from app.auth.routes import _second_factor_ok
+from app.extensions import db, limiter
 from app.models import Booking, Flight, Passenger
 from app.security import audit
 
@@ -124,18 +126,51 @@ def ticket(reference: str):
     return render_template("bookings/ticket.html", booking=booking, bars=items, bar_width=total_width(items))
 
 
-@bp.route("/<reference>/cancel", methods=["POST"])
+@bp.route("/<reference>/cancel", methods=["GET", "POST"])
 @login_required
+@limiter.limit("10 per hour", key_func=lambda: f"cancel-{current_user.get_id()}")
 def cancel(reference: str):
+    """Cancelling needs a reason and the password (plus the app code when two-factor is on)."""
     booking = _own_booking_or_404(reference)
-    try:
-        cancel_booking(current_user.id, booking)
-    except BookingError as error:
-        flash(str(error), "info")
-    else:
-        audit("booking_cancelled", current_user, booking.reference)
-        flash("Booking cancelled. Your seats have been released.", "success")
-    return redirect(url_for("bookings.detail", reference=reference))
+    if not booking.can_cancel:
+        flash("This booking can no longer be cancelled.", "info")
+        return redirect(url_for("bookings.detail", reference=reference))
+
+    problem, chosen = None, ""
+    if request.method == "POST":
+        chosen = clean_reason(request.form.get("reason"))
+        if chosen is None:
+            problem = "Please choose a reason."
+        elif too_many_recent(current_user.id):
+            audit("cancel_burst_blocked", current_user, booking.reference)
+            problem = ("Too many cancellations in a short time. For your safety, wait ten minutes "
+                       "or contact support.")
+        elif not current_user.check_password(request.form.get("password", "")[:128]):
+            audit("cancel_refused", current_user, f"{booking.reference}: wrong password")
+            problem = "That is not your current password."
+        elif current_user.totp_enabled and not _second_factor_ok(current_user, request.form.get("code", "")[:40]):
+            db.session.commit()
+            audit("cancel_refused", current_user, f"{booking.reference}: wrong code")
+            problem = "That code is not right."
+        else:
+            ip = (request.remote_addr or "")[:45]
+            try:
+                cancel_booking(current_user.id, booking, chosen, ip)
+            except BookingError as error:
+                flash(str(error), "info")
+            else:
+                db.session.commit()  # keeps the used two-factor step
+                audit("booking_cancelled", current_user, f"{booking.reference}: {chosen}")
+                if recent_cancellations(current_user.id) >= BURST_LIMIT:
+                    audit("cancel_burst_alert", current_user, f"{BURST_LIMIT} cancellations in 10 minutes")
+                db.session.refresh(booking)
+                send_cancellation_notice(booking, ip)
+                flash("Booking cancelled. Your seats have been released.", "success")
+            return redirect(url_for("bookings.detail", reference=reference))
+        chosen = chosen or ""
+    return render_template("bookings/cancel.html", booking=booking, reasons=REASONS, chosen=chosen,
+                           problem=problem, needs_code=current_user.totp_enabled), (400 if problem else 200)
+
 
 @bp.route("/<reference>/seats", methods=["GET", "POST"])
 @login_required

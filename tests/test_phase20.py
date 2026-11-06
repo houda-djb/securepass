@@ -78,7 +78,7 @@ def test_ticket_belongs_to_its_owner_only(app, client, users):
 def test_cancelled_booking_has_no_ticket(app, client, users):
     login(client)
     ref = reference_of(book_with(client, a_flight(app)))
-    client.post(f"/bookings/{ref}/cancel")
+    client.post(f"/bookings/{ref}/cancel", data={"reason": "plans", "password": "Correct-horse-42"})
     assert client.get(f"/bookings/{ref}/ticket").status_code == 404
 
 

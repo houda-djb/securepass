@@ -182,6 +182,9 @@ class Booking(db.Model):
     payment_method = db.Column(db.String(12), nullable=False, default="card", server_default="card")
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     cancelled_at = db.Column(db.DateTime, nullable=True)
+    # Who cancelled and why (Phase 26): a cancellation is never anonymous or unexplained.
+    cancel_reason = db.Column(db.String(20), nullable=True)
+    cancelled_ip = db.Column(db.String(45), nullable=True)
 
     user = db.relationship("User")
     flight = db.relationship("Flight")
