@@ -85,3 +85,21 @@ def bookings_csv(range_key: str) -> str:
             b.flight.departs_at.strftime("%Y-%m-%d %H:%M"), b.passengers,
             f"{b.total_cents / 100:.2f}", b.user.email)])
     return out.getvalue()
+
+
+SUSPICIOUS_COUNT = 3  # this many cancellations by one account in a day is flagged
+
+
+def cancellation_rows(limit: int = 200) -> tuple[list[dict], int]:
+    """Latest cancellations with who, why and from where, flagging accounts that cancel a lot."""
+    rows = db.session.scalars(
+        select(Booking).options(joinedload(Booking.flight), joinedload(Booking.user))
+        .where(Booking.status == "cancelled").order_by(Booking.cancelled_at.desc()).limit(limit)).all()
+    day_ago = utcnow() - timedelta(days=1)
+    per_user: dict[int, int] = {}
+    for b in rows:
+        if b.cancelled_at and b.cancelled_at >= day_ago:
+            per_user[b.user_id] = per_user.get(b.user_id, 0) + 1
+    result = [{"booking": b, "flagged": per_user.get(b.user_id, 0) >= SUSPICIOUS_COUNT,
+               "unexplained": not b.cancel_reason} for b in rows]
+    return result, sum(1 for r in result if r["flagged"] or r["unexplained"])

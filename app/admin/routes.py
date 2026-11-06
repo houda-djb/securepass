@@ -52,6 +52,12 @@ def sales_reports():
                            routes=reports.top_routes(key))
 
 
+@bp.route("/cancellations")
+def cancellations():
+    rows, attention = reports.cancellation_rows()
+    return render_template("admin/cancellations.html", rows=rows, attention=attention)
+
+
 @bp.route("/reports/bookings.csv")
 def export_bookings():
     key = reports.clean_range(request.args.get("days"))

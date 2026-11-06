@@ -26,18 +26,19 @@ def confirmation_text(booking) -> str:
 
 
 def send_confirmation(booking) -> None:
-    to = booking.user.email
-    body = confirmation_text(booking)
+    _deliver(booking.user.email, f"Your SecurePass booking {booking.reference}", confirmation_text(booking))
+
+
+def _deliver(to: str, subject: str, body: str) -> None:
     if current_app.testing:
-        current_app.extensions.setdefault("outbox", []).append(
-            {"to": to, "body": body, "subject": f"Booking {booking.reference}"})
+        current_app.extensions.setdefault("outbox", []).append({"to": to, "body": body, "subject": subject})
         return
     host = os.environ.get("SMTP_HOST")
     if not host:
-        log.info("SMTP_HOST is not set: no confirmation email sent for %s.", booking.reference)
+        log.info("SMTP_HOST is not set: no email sent (%s).", subject)
         return
     message = EmailMessage()
-    message["Subject"] = f"Your SecurePass booking {booking.reference}"
+    message["Subject"] = subject
     message["From"] = os.environ.get("MAIL_FROM", "no-reply@securepass.local")
     message["To"] = to
     message.set_content(body)
@@ -49,3 +50,16 @@ def send_confirmation(booking) -> None:
             smtp.send_message(message)
     except (OSError, smtplib.SMTPException):
         log.exception("Could not send the confirmation email.")
+
+
+def send_cancellation_notice(booking, ip: str) -> None:
+    """Tell the owner at once, so a cancellation they did not make is noticed within minutes."""
+    from app.bookings.cancellation import reason_label
+    body = (f"Your SecurePass booking {booking.reference} "
+            f"({booking.flight.origin.city} to {booking.flight.destination.city}, "
+            f"{booking.flight.departs_at.strftime('%d %B %Y')}) was cancelled.\n\n"
+            f"Reason given: {reason_label(booking.cancel_reason)}\n"
+            f"Network address: {ip}\n\n"
+            "If this was you, nothing else is needed. If it was not you, change your password now "
+            f"({url_for('auth.forgot_password', _external=True)}) and turn on two-factor login.\n")
+    _deliver(booking.user.email, f"Booking {booking.reference} was cancelled", body)

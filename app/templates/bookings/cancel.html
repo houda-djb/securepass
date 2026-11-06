@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Cancel booking {{ booking.reference }} | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container detail narrow">
+  <a class="back-link" href="{{ url_for('bookings.detail', reference=booking.reference) }}"><span class="arrow" aria-hidden="true">&larr;</span> {{ _('Back to booking') }}</a>
+  <h1>Cancel this booking?</h1>
+  <p class="panel-sub">Booking <strong>{{ booking.reference }}</strong>: {{ booking.flight.origin.city }} to {{ booking.flight.destination.city }}, {{ booking.flight.departs_at.strftime('%d %B %Y') }}.
+    Your seats go back to the flight and this cannot be undone. For your safety we ask for your password{% if needs_code %} and a code from your app{% endif %}.</p>
+
+  {% if problem %}<div class="error-summary" role="alert">{{ problem }}</div>{% endif %}
+
+  <form method="post" action="{{ url_for('bookings.cancel', reference=booking.reference) }}" class="stack-form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <fieldset class="pay-set">
+      <legend>Why are you cancelling?</legend>
+      {% for key, label in reasons.items() %}
+      <label class="pay-option">
+        <input type="radio" name="reason" value="{{ key }}" {% if key == chosen %}checked{% endif %} required>
+        <span class="pay-text"><strong>{{ label }}</strong></span>
+      </label>
+      {% endfor %}
+    </fieldset>
+    <div class="field">
+      <label for="cancel-password">Your password</label>
+      <input id="cancel-password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+    </div>
+    {% if needs_code %}
+    <div class="field">
+      <label for="cancel-code">Code from your authenticator app (or a recovery code)</label>
+      <input id="cancel-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" class="code-input" required>
+    </div>
+    {% endif %}
+    <div class="btn-row">
+      <button class="btn btn-danger" type="submit">Cancel this booking</button>
+      <a class="btn btn-ghost" href="{{ url_for('bookings.detail', reference=booking.reference) }}">Keep my booking</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

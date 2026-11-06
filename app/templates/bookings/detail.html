@@ -54,12 +54,9 @@
   {% endif %}
 
   {% if booking.can_cancel %}
-    <form method="post" action="{{ url_for('bookings.cancel', reference=booking.reference) }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn-danger" type="submit">{{ _("Cancel this booking") }}</button>
-    </form>
+    <p><a class="btn btn-danger" href="{{ url_for('bookings.cancel_form', reference=booking.reference) }}">{{ _("Cancel this booking") }}</a></p>
   {% elif booking.is_cancelled %}
-    <p class="detail-note">This booking was cancelled{% if booking.cancelled_at %} on {{ booking.cancelled_at.strftime('%d %b %Y, %H:%M') }} UTC{% endif %}. Its seats were released.</p>
+    <p class="detail-note">This booking was cancelled{% if booking.cancelled_at %} on {{ booking.cancelled_at.strftime('%d %b %Y, %H:%M') }} UTC{% endif %}{% if booking.cancel_reason %} ({{ reason_label(booking.cancel_reason) }}){% endif %}. Its seats were released.</p>
   {% else %}
     <p class="detail-note">This flight has already departed, so the booking can't be changed.</p>
   {% endif %}

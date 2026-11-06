@@ -168,6 +168,9 @@ EVENT_LABELS = {
     "recovery_codes_renewed": "New recovery codes made",
     "seats_selected": "Seats chosen",
     "data_exported": "Personal data downloaded",
+    "cancel_refused": "Cancellation refused (wrong password or code)",
+    "cancel_burst_blocked": "Cancellation blocked: too many in a short time",
+    "cancel_burst_alert": "Several bookings cancelled in a few minutes",
     "account_delete_refused": "Account deletion refused",
 }
 HISTORY_LENGTH = 8

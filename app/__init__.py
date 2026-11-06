@@ -82,6 +82,8 @@ def register_template_helpers(app: Flask) -> None:
     app.add_template_global(slider_format, "slider_format")
     from app.bookings.payment import method_label
     app.add_template_global(method_label, "method_label")
+    from app.bookings.cancellation import reason_label
+    app.add_template_global(reason_label, "reason_label")
     app.add_template_global(CURRENCIES, "CURRENCIES")
 
     from app import i18n

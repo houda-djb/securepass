@@ -80,7 +80,7 @@ def create_booking(user_id: int, flight_id: int, passengers: int,
     return booking
 
 
-def cancel_booking(user_id: int, booking: Booking) -> None:
+def cancel_booking(user_id: int, booking: Booking, reason: str | None = None, ip: str | None = None) -> None:
     """Cancel a confirmed booking and give its seats back (FR12)."""
     if booking.flight.has_departed:
         raise BookingError("Flights that have already departed can't be cancelled.")
@@ -90,7 +90,7 @@ def cancel_booking(user_id: int, booking: Booking) -> None:
     cancelled = db.session.execute(
         update(Booking)
         .where(Booking.id == booking.id, Booking.user_id == user_id, Booking.status == "confirmed")
-        .values(status="cancelled", cancelled_at=utcnow())
+        .values(status="cancelled", cancelled_at=utcnow(), cancel_reason=reason, cancelled_ip=(ip or None) and ip[:45])
     )
     if cancelled.rowcount != 1:
         db.session.rollback()

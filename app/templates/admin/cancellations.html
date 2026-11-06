@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Cancellations | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container admin-page">
+  <h1>Admin</h1>
+  {% set active = 'cancellations' %}{% include "admin/_nav.html" %}
+
+  <p class="panel-sub">Every cancelled booking with who made it, why and from where.
+    {% if attention %}<strong>{{ attention }}</strong> need a look: an account that cancelled {{ 3 }} or more bookings in a day, or a cancellation with no reason recorded.{% else %}Nothing looks unusual.{% endif %}</p>
+
+  {% if rows %}
+  <div class="table-wrap">
+  <table class="report-table">
+    <thead><tr><th scope="col">When (UTC)</th><th scope="col">Booking</th><th scope="col">Account</th><th scope="col">Reason</th><th scope="col">Address</th><th scope="col">Check</th></tr></thead>
+    <tbody>
+    {% for r in rows %}{% set b = r.booking %}
+      <tr>
+        <td>{{ b.cancelled_at.strftime('%d %b %H:%M') if b.cancelled_at else '' }}</td>
+        <th scope="row">{{ b.reference }}<br><small>{{ b.flight.origin_code }} to {{ b.flight.destination_code }}</small></th>
+        <td>{{ b.user.email }}</td>
+        <td>{{ reason_label(b.cancel_reason) }}</td>
+        <td>{{ b.cancelled_ip or '' }}</td>
+        <td>{% if r.flagged %}<span class="badge badge-warn">Many today</span>{% endif %}{% if r.unexplained %} <span class="badge badge-neutral">No reason</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}<p class="empty">No cancelled bookings.</p>{% endif %}
+</section>
+{% endblock %}

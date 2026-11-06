@@ -150,7 +150,7 @@ def test_only_the_owner_can_see_passenger_names(app, client, users):
 def test_cancelling_keeps_the_passenger_names(app, client, users):
     login(client)
     location = book(client, a_flight(app), 1).headers["Location"]
-    assert client.post(location + "/cancel").status_code == 302
+    assert client.post(location + "/cancel", data={"reason": "plans", "password": "Correct-horse-42"}).status_code == 302
     with app.app_context():
         assert Passenger.query.count() == 1
 

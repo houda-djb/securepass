@@ -268,7 +268,7 @@ def test_cancel_returns_the_seats(app, client, users):
     ref = only_booking_reference(app)
     assert seats(app, fid) == before - 3
 
-    assert client.post(f"/bookings/{ref}/cancel").status_code == 302
+    assert client.post(f"/bookings/{ref}/cancel", data={"reason": "plans", "password": "Correct-horse-42"}).status_code == 302
     assert seats(app, fid) == before
     with app.app_context():
         booking = Booking.query.one()
@@ -282,7 +282,7 @@ def test_cancelling_twice_returns_seats_only_once(app, client, users):
     login(client)
     book(client, fid, passengers=2)
     ref = only_booking_reference(app)
-    client.post(f"/bookings/{ref}/cancel")
+    client.post(f"/bookings/{ref}/cancel", data={"reason": "plans", "password": "Correct-horse-42"})
     res = client.post(f"/bookings/{ref}/cancel", follow_redirects=True)
     assert b"already cancelled" in res.data
     assert seats(app, fid) == before
@@ -297,7 +297,7 @@ def test_cannot_cancel_someone_elses_booking(app, client, users):
 
     other = app.test_client()
     login(other, BOB)
-    assert other.post(f"/bookings/{ref}/cancel").status_code == 404  # AC2
+    assert other.post(f"/bookings/{ref}/cancel", data={"reason": "plans", "password": "Correct-horse-42"}).status_code == 404  # AC2
     with app.app_context():
         assert Booking.query.one().status == "confirmed"
     assert seats(app, fid) == seats_after_booking
@@ -310,7 +310,7 @@ def test_cancel_needs_post_and_login(app, client, users):
     ref = only_booking_reference(app)
     assert client.get(f"/bookings/{ref}/cancel").status_code == 405
     client.post("/logout")
-    assert client.post(f"/bookings/{ref}/cancel").status_code == 302
+    assert client.post(f"/bookings/{ref}/cancel", data={"reason": "plans", "password": "Correct-horse-42"}).status_code == 302
     with app.app_context():
         assert Booking.query.one().status == "confirmed"
 
@@ -363,11 +363,11 @@ def test_booking_and_cancel_need_a_csrf_token(csrf_app):
     assert book(client, fid, csrf_token=token).status_code == 302
 
     ref = only_booking_reference(csrf_app)
-    assert client.post(f"/bookings/{ref}/cancel").status_code == 400
+    assert client.post(f"/bookings/{ref}/cancel", data={"reason": "plans", "password": "Correct-horse-42"}).status_code == 400
     with csrf_app.app_context():
         assert Booking.query.one().status == "confirmed"
     token = token_from(client, f"/bookings/{ref}")
-    assert client.post(f"/bookings/{ref}/cancel", data={"csrf_token": token}).status_code == 302
+    assert client.post(f"/bookings/{ref}/cancel", data={"csrf_token": token, "reason": "plans", "password": "Correct-horse-42"}).status_code == 302
 
 
 # ---------------- Flight page and database rules ----------------
