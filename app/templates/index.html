@@ -21,6 +21,45 @@
   </div>
 </section>
 
+{% if dashboard %}
+<section class="dashboard container" aria-labelledby="dash-title">
+  <h2 class="section-title" id="dash-title">{{ _('Your dashboard') }}</h2>
+  <div class="dash-grid">
+    <article class="glass-card">
+      <h3>{{ _('Your trips') }}</h3>
+      {% if dashboard.next %}{% set b = dashboard.next %}
+        <p class="dash-big">{{ _(b.flight.destination.city) }}</p>
+        <p class="dash-sub">{{ long_date(b.flight.departs_at) }} &middot; {{ b.flight.departs_at.strftime('%H:%M') }}</p>
+        <p class="dash-badges"><span class="chip-ok">&#10003; {{ _('Verified') }}</span> <span class="chip-ok">&#10003; {{ _('Safe') }}</span></p>
+        <a class="btn btn-ghost" href="{{ url_for('bookings.detail', reference=b.reference) }}">{{ _('View') }}</a>
+      {% else %}
+        <p class="dash-sub">{{ _('No upcoming trip yet.') }}</p>
+        <a class="btn btn-ghost" href="{{ url_for('flights.search') }}">{{ _('Find a flight') }}</a>
+      {% endif %}
+    </article>
+    <article class="glass-card">
+      <h3>{{ _('Verified profile') }}</h3>
+      <p class="dash-big dash-email">{{ current_user.email }}</p>
+      <dl class="dash-facts">
+        <div><dt>{{ _('Two-step login') }}</dt><dd>{{ _('Yes') if current_user.totp_enabled else _('No') }}</dd></div>
+        <div><dt>{{ _('Confirmed bookings') }}</dt><dd>{{ dashboard.total }}</dd></div>
+      </dl>
+      {% if not current_user.totp_enabled %}<a class="btn btn-ghost" href="{{ url_for('auth.two_factor_setup') }}">{{ _('Turn on two-factor login') }}</a>{% endif %}
+    </article>
+    <article class="glass-card">
+      <h3>{{ _('Live updates') }}</h3>
+      {% if dashboard.next %}{% set f = dashboard.next.flight %}
+        <p class="dash-big">{{ _('Flight') }} {{ f.flight_no }}</p>
+        <p class="dash-sub">{{ _(f.origin.city) }} <span class="arrow" aria-hidden="true">&rarr;</span> {{ _(f.destination.city) }}</p>
+        <p class="dash-status"><span class="status-dot" aria-hidden="true"></span> {{ _('On time') }}</p>
+      {% else %}
+        <p class="dash-sub">{{ _('Your next flight will appear here.') }}</p>
+      {% endif %}
+    </article>
+  </div>
+</section>
+{% endif %}
+
 <section class="seasonal container" id="seasons" aria-labelledby="seasons-title">
   <div class="section-head">
     <h2 id="seasons-title">{{ _('Where to go this %(season)s', season=_(season)) }}</h2>
