@@ -1,7 +1,9 @@
 from datetime import date, datetime
 
 from flask import abort, current_app, jsonify, redirect, render_template, request, session, url_for
+from flask_login import current_user
 from sqlalchemy import func, select, text
+from sqlalchemy.orm import joinedload
 
 from app.currency import CURRENCIES
 from app.extensions import db, limiter
@@ -9,7 +11,7 @@ from app.main import bp
 from app.i18n import LANGS
 from app.main.seasons import (MONTH_NAMES, SEASON_ORDER, SEASONS, STYLES, best_time_text, clean_month,
                               clean_season, fits)
-from app.models import Airport, Country, Flight
+from app.models import Airport, Booking, Country, Flight
 from app.security import is_safe_next
 from app.security_headers import talisman
 
@@ -53,6 +55,20 @@ def _country_cards(countries: list[Country]) -> tuple[list[Airport], dict[str, i
     return airports, country_fares(countries, airports), {c.slug: best_time_text(c.months) for c in countries}
 
 
+def dashboard_for(user):
+    """The signed-in visitor's next trip, for the home page panel. None for anonymous visitors."""
+    if not getattr(user, "is_authenticated", False):
+        return None
+    now = datetime.now()  # flight times are plain local times in this demo
+    upcoming = db.session.scalars(
+        select(Booking).join(Booking.flight).options(joinedload(Booking.flight))
+        .where(Booking.user_id == user.id, Booking.status == "confirmed", Flight.departs_at > now)
+        .order_by(Flight.departs_at).limit(1)).first()
+    total = db.session.scalar(select(func.count()).select_from(Booking)
+                              .where(Booking.user_id == user.id, Booking.status == "confirmed"))
+    return {"next": upcoming, "total": total or 0}
+
+
 @bp.route("/")
 def index():
     today = date.today()
@@ -72,7 +88,7 @@ def index():
         season=season, seasons=SEASON_ORDER, in_season=in_season, country_fares=fares_by_country,
         best_time={c.slug: best_time_text(c.months) for c in in_season},
         top_trips=top_trips, home_fares=home_fares, home=by_code.get(HOME_AIRPORT),
-        country_count=len(countries), city_count=len(airports))
+        country_count=len(countries), city_count=len(airports), dashboard=dashboard_for(current_user))
 
 
 @bp.route("/countries")
