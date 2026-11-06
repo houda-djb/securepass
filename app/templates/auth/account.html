@@ -80,6 +80,28 @@
           <button class="btn btn-solid" type="submit">Change password</button>
         </form>
       </article>
+
+      <article class="panel" id="delete">
+        <h2>Your data</h2>
+        <p class="panel-sub">Download everything we hold about you (profile, bookings, passenger names and security events) as a file. It never contains passwords or secrets.</p>
+        <a class="btn btn-ghost" href="{{ url_for('auth.export_my_data') }}">Download my data</a>
+        <details class="tf-details">
+          <summary>Delete my account</summary>
+          <p class="field-hint">This removes your account, bookings and passenger names for good. Seats on future flights are given back. It cannot be undone.</p>
+          <form method="post" action="{{ url_for('auth.delete_my_account') }}" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+              <label for="delete-confirm">Type the word <strong>delete</strong></label>
+              <input id="delete-confirm" name="confirm" type="text" autocomplete="off" maxlength="10" required>
+            </div>
+            <div class="field">
+              <label for="delete-password">Current password</label>
+              <input id="delete-password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+            </div>
+            <button class="btn btn-danger" type="submit">Delete my account for good</button>
+          </form>
+        </details>
+      </article>
     </div>
 
     <aside class="panel" aria-labelledby="activity-title">

@@ -167,6 +167,8 @@ EVENT_LABELS = {
     "recovery_code_used": "Recovery code used to log in",
     "recovery_codes_renewed": "New recovery codes made",
     "seats_selected": "Seats chosen",
+    "data_exported": "Personal data downloaded",
+    "account_delete_refused": "Account deletion refused",
 }
 HISTORY_LENGTH = 8
 
