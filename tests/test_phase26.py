@@ -17,7 +17,7 @@ def status_of(app, ref):
 
 def test_cancel_page_asks_for_a_reason_and_password(app, client, users):
     login(client)
-    page = client.get(f"/bookings/{make(client, app)}/cancel").get_data(as_text=True)
+    page = client.get(f"/bookings/{make(client, app)}/cancel/confirm").get_data(as_text=True)
     assert 'name="reason"' in page and 'name="password"' in page and 'name="csrf_token"' in page
 
 
@@ -47,7 +47,8 @@ def test_cancel_with_wrong_password_is_refused_and_logged(app, client, users):
 def test_a_get_request_never_cancels(app, client, users):
     login(client)
     ref = make(client, app)
-    client.get(f"/bookings/{ref}/cancel")
+    assert client.get(f"/bookings/{ref}/cancel").status_code == 405
+    assert client.get(f"/bookings/{ref}/cancel/confirm").status_code == 200
     assert status_of(app, ref) == "confirmed"
 
 

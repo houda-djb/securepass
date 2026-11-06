@@ -367,7 +367,7 @@ def test_booking_and_cancel_need_a_csrf_token(csrf_app):
     with csrf_app.app_context():
         assert Booking.query.one().status == "confirmed"
     token = token_from(client, f"/bookings/{ref}")
-    assert client.post(f"/bookings/{ref}/cancel", data={"csrf_token": token}).status_code == 302
+    assert client.post(f"/bookings/{ref}/cancel", data={"csrf_token": token, "reason": "plans", "password": "Correct-horse-42"}).status_code == 302
 
 
 # ---------------- Flight page and database rules ----------------

@@ -9,6 +9,9 @@ for path in sorted(Path("tests").glob("test_*.py")):
         continue
     text = path.read_text(encoding="utf-8")
     fixed = re.sub(r'(\.post\([^\n]*?/cancel")\)', lambda m: m.group(1) + ", data=" + DATA + ")", text)
+    fixed = re.sub(r'(\.post\([^\n]*?/cancel"), data=\{"csrf_token": ([a-z_]+)\}\)',
+                   lambda m: m.group(1) + ', data={"csrf_token": ' + m.group(2)
+                   + ', "reason": "plans", "password": "Correct-horse-42"})', fixed)
     if fixed != text:
         path.write_text(fixed, encoding="utf-8", newline="")
         print("updated", path)
