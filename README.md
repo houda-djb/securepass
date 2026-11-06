@@ -89,6 +89,7 @@ pip-audit -r requirements.txt
 - [v3.0 release notes](docs/V3_RELEASE.md)
 - [v3.0 demo script](docs/DEMO_V3.md)
 | [SECURITY.md](SECURITY.md) | Reporting policy and known limits |
+- [v3.1 release notes](docs/V3_1_RELEASE.md)
 
 Tests check these documents, so a renamed test or a missing requirement fails the build.
 
