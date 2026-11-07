@@ -66,6 +66,8 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
 
     register_template_helpers(app)
     register_error_handlers(app)
+    from app.bookings import holds
+    holds.register(app)
     return app
 
 

@@ -6,6 +6,17 @@
   {% set step = 3 %}{% include "_stepper.html" %}
   <a class="back-link" href="{{ url_for('flights.detail', flight_id=flight.id, passengers=passengers) }}"><span class="arrow" aria-hidden="true">&larr;</span> {{ _('Back to flight') }}</a>
   <h1>{{ _('Confirm your booking') }}</h1>
+  {% if hold_left %}
+  <div class="hold-banner" data-hold="{{ hold_left }}" role="timer" aria-live="off">
+    <span class="hold-icon" aria-hidden="true">&#9201;</span>
+    <span class="hold-text"><strong>{{ _('Your seats are held for you.') }}</strong>
+      {{ _('Finish within %(minutes)s minutes or they go back on sale.', minutes=hold_minutes) }}</span>
+    <span class="hold-clock" data-hold-clock>{{ '%02d:%02d' % (hold_left // 60, hold_left % 60) }}</span>
+    <div class="hold-bar"><span data-hold-bar></span></div>
+  </div>
+  <p class="hold-expired" data-hold-expired hidden role="alert">{{ _('Your hold has expired.') }}
+    <a href="{{ url_for('bookings.new', flight_id=flight.id, passengers=passengers) }}">{{ _('Hold the seats again') }}</a></p>
+  {% endif %}
 
   <div class="detail-card">
     <div class="detail-leg">

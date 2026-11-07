@@ -342,7 +342,71 @@
     onScroll();
   }
 
-  [initSearchForm, initPasswords, initFlash, initFilters, initSeatMap, initHeader].forEach(function (setup) {
+  // ------------------------------------------------------------------ home page extras
+  function initHome() {
+    // Live clock on the departures board (Alger time).
+    var clock = $("[data-clock]");
+    if (clock) {
+      var fmt;
+      try { fmt = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Africa/Algiers" }); } catch (e) { fmt = null; }
+      var tick = function () { clock.textContent = fmt ? fmt.format(new Date()) : new Date().toTimeString().slice(0, 5); };
+      tick();
+      window.setInterval(tick, 15000);
+    }
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Numbers count up once when they scroll into view.
+    var counters = $$("[data-count]");
+    // Sections fade in as they scroll into view. Without JavaScript they are simply visible.
+    var reveals = $$(".reveal");
+    if (!("IntersectionObserver" in window) || reduce) { return; }
+    document.documentElement.classList.add("js-reveal");
+    var seen = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) { return; }
+        entry.target.classList.add("is-in");
+        seen.unobserve(entry.target);
+        $$("[data-count]", entry.target).forEach(function (el) {
+          var end = parseInt(el.getAttribute("data-count"), 10) || 0, start = null;
+          function step(ts) {
+            if (start === null) { start = ts; }
+            var t = Math.min(1, (ts - start) / 900);
+            el.textContent = String(Math.round(end * (1 - Math.pow(1 - t, 3))));
+            if (t < 1) { window.requestAnimationFrame(step); }
+          }
+          window.requestAnimationFrame(step);
+        });
+      });
+    }, { threshold: 0.15 });
+    reveals.forEach(function (el) { seen.observe(el); });
+    void counters;
+  }
+
+  // ------------------------------------------------------------------ seat hold countdown
+  function initHold() {
+    var banner = $("[data-hold]");
+    if (!banner) { return; }
+    var total = parseInt(banner.getAttribute("data-hold"), 10) || 0;
+    var left = total;
+    var clock = $("[data-hold-clock]", banner), bar = $("[data-hold-bar]", banner);
+    var expired = $("[data-hold-expired]");
+    var submit = $("form button[type=submit]");
+    function paint() {
+      var m = Math.floor(left / 60), s = left % 60;
+      clock.textContent = (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+      bar.style.width = Math.max(0, Math.round(100 * left / (15 * 60))) + "%";
+      banner.classList.toggle("is-low", left <= 120);
+      if (left <= 0) {
+        banner.hidden = true;
+        if (expired) { expired.hidden = false; }
+        if (submit) { submit.disabled = true; }
+        window.clearInterval(timer);
+      }
+    }
+    var timer = window.setInterval(function () { left -= 1; paint(); }, 1000);
+    paint();
+  }
+
+  [initSearchForm, initPasswords, initFlash, initFilters, initSeatMap, initHeader, initHome, initHold].forEach(function (setup) {
     try { setup(); } catch (error) {
       // One failing enhancement must never take the others (or the page) down with it.
       if (window.console) { console.error(error); }

@@ -69,6 +69,21 @@ def dashboard_for(user):
     return {"next": upcoming, "total": total or 0}
 
 
+def departures_board(limit: int = 6):
+    """The next flights leaving Alger, for the board on the home page."""
+    now = datetime.now()  # flight times are plain local times in this demo
+    rows = db.session.scalars(
+        select(Flight).options(joinedload(Flight.destination), joinedload(Flight.airline))
+        .where(Flight.origin_code == HOME_AIRPORT, Flight.departs_at > now, Flight.seats_available > 0)
+        .order_by(Flight.departs_at).limit(limit)).all()
+    board = []
+    for f in rows:
+        minutes = int((f.departs_at - now).total_seconds() // 60)
+        status = "Boarding" if minutes < 45 else "Check-in open" if minutes < 180 else "On time"
+        board.append({"flight": f, "status": status, "few": f.seats_available <= 9})
+    return board
+
+
 @bp.route("/")
 def index():
     today = date.today()
@@ -88,7 +103,8 @@ def index():
         season=season, seasons=SEASON_ORDER, in_season=in_season, country_fares=fares_by_country,
         best_time={c.slug: best_time_text(c.months) for c in in_season},
         top_trips=top_trips, home_fares=home_fares, home=by_code.get(HOME_AIRPORT),
-        country_count=len(countries), city_count=len(airports), dashboard=dashboard_for(current_user))
+        country_count=len(countries), city_count=len(airports), dashboard=dashboard_for(current_user),
+        board=departures_board())
 
 
 @bp.route("/countries")

@@ -56,19 +56,27 @@ def create_booking(user_id: int, flight_id: int, passengers: int,
     flight = db.session.get(Flight, flight_id)
     if flight is None:
         raise BookingError("That flight no longer exists.")
-    problem = booking_problem(flight, passengers)
-    if problem:
-        raise BookingError(problem)
+    from app.bookings.holds import consume_hold, release_user_holds  # avoids a circular import
 
+    if flight.has_departed:
+        raise BookingError("This flight has already departed.")
     price_cents = flight.price_cents  # the server's price, never a number from the browser
-    claimed = db.session.execute(
-        update(Flight)
-        .where(Flight.id == flight_id, Flight.seats_available >= passengers)
-        .values(seats_available=Flight.seats_available - passengers)
-    )
-    if claimed.rowcount != 1:  # another booking took the seats after we looked
-        db.session.rollback()
-        raise BookingError("Sorry, those seats were just taken. Please search again.")
+    if consume_hold(user_id, flight_id, passengers):
+        pass  # the seats were already taken off the flight when the hold was placed
+    else:
+        release_user_holds(user_id)  # a hold of a different size or flight is dropped first
+        db.session.refresh(flight)
+        problem = booking_problem(flight, passengers)
+        if problem:
+            raise BookingError(problem)
+        claimed = db.session.execute(
+            update(Flight)
+            .where(Flight.id == flight_id, Flight.seats_available >= passengers)
+            .values(seats_available=Flight.seats_available - passengers)
+        )
+        if claimed.rowcount != 1:  # another booking took the seats after we looked
+            db.session.rollback()
+            raise BookingError("Sorry, those seats were just taken. Please search again.")
 
     booking = Booking(reference=new_reference(), user_id=user_id, flight_id=flight_id,
                       passengers=passengers, total_cents=price_cents * passengers,
