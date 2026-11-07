@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from app.bookings import bp
 from app.bookings.barcode import bars, total_width
 from app.bookings.forms import BookingForm
+from app.bookings.holds import HOLD_MINUTES, active_hold, place_hold, seconds_left
 from app.bookings.cancellation import BURST_LIMIT, REASONS, clean_reason, recent_cancellations, too_many_recent
 from app.bookings.notify import send_cancellation_notice, send_confirmation
 from app.bookings.payment import METHODS, clean_method
@@ -66,6 +67,7 @@ def index():
 
 @bp.route("/new/<int:flight_id>", methods=["GET", "POST"])
 @login_required
+@limiter.limit("30 per 10 minutes", methods=["GET"], key_func=lambda: f"hold-{current_user.get_id()}")
 def new(flight_id: int):
     if flight_id > MAX_ID:
         abort(404)
@@ -101,9 +103,16 @@ def new(flight_id: int):
 
     form = BookingForm(formdata=None, passengers=passengers)  # fresh form with a fresh token
     db.session.refresh(flight)
-    problem = message or booking_problem(flight, passengers)
+    hold = active_hold(current_user.id, flight.id, passengers)
+    if hold is None and not message and request.method == "GET":
+        try:
+            hold = place_hold(current_user.id, flight, passengers)  # keep the seats for 15 minutes
+        except BookingError as error:
+            message = str(error)
+    problem = message or (None if hold else booking_problem(flight, passengers))
     return render_template("bookings/checkout.html", flight=flight, form=form,
                            passengers=passengers, problem=problem,
+                           hold_left=seconds_left(hold), hold_minutes=HOLD_MINUTES,
                            name_values=name_values, name_errors=name_errors, methods=METHODS,
                            chosen_method=clean_method(request.form.get("payment_method")),
                            total_cents=flight.price_cents * passengers), status

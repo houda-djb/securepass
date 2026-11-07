@@ -165,6 +165,27 @@ class AuditLog(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
 
 
+class SeatHold(db.Model):
+    """Seats kept for one traveller for a few minutes while they check out (Phase 29).
+
+    The seats are already taken off the flight, so nobody else can buy them. If the traveller does
+    not finish in time the hold expires and the seats go back on sale.
+    """
+
+    __tablename__ = "seat_holds"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True)  # one hold per person
+    flight_id = db.Column(db.Integer, db.ForeignKey("flights.id"), nullable=False, index=True)
+    passengers = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+
+    flight = db.relationship("Flight")
+
+    __table_args__ = (db.CheckConstraint("passengers BETWEEN 1 AND 9", name="ck_hold_passengers"),)
+
+
 class Booking(db.Model):
     """A reservation of seats on one flight by one user (FR9-FR12)."""
 

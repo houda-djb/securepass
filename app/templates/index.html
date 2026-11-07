@@ -4,28 +4,77 @@
 
 {% block content %}
 {% set hero_photo = photo_url('hero') %}
-<section class="hero">
-  {% if hero_photo %}<img class="hero-photo" src="{{ hero_photo }}" alt="" width="1920" height="1080">{% endif %}
-  <div class="container hero-inner">
-    <h1>{{ _("Where to next from Alger?") }}</h1>
-    <p class="hero-sub">{{ _("Prices in dinars, seats you choose yourself, and an account that stays yours.") }}</p>
+<div class="shell">
+  <nav class="rail" aria-label="{{ _('Shortcuts') }}">
+    <a class="rail-link" href="{{ url_for('main.index') }}" aria-current="page" aria-label="{{ _('Home') }}" title="{{ _('Home') }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg></a>
+    <a class="rail-link" href="{{ url_for('flights.search') }}" aria-label="{{ _('Explore Flights') }}" title="{{ _('Explore Flights') }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 14 3 11.5l1.4-1.4 7 .6 4.2-4.2a1.8 1.8 0 1 1 2.6 2.6l-4.2 4.2.6 7-1.4 1.4L12.3 14.5"/></svg></a>
+    <a class="rail-link" href="{{ url_for('main.countries') }}" aria-label="{{ _('Countries') }}" title="{{ _('Countries') }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 3 3 10.5l7 2.5 2.5 7z"/><path d="m10 13 4-4"/></svg></a>
+    <a class="rail-link" href="{{ url_for('auth.account') if current_user.is_authenticated else url_for('auth.login') }}" aria-label="{{ _('My account') }}" title="{{ _('My account') }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></a>
+    <a class="rail-link" href="{{ url_for('bookings.index') if current_user.is_authenticated else url_for('auth.register') }}" aria-label="{{ _('My Bookings') if current_user.is_authenticated else _('Register') }}" title="{{ _('My Bookings') if current_user.is_authenticated else _('Register') }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></a>
+  </nav>
 
-    {% include "_search_form.html" %}
+  <div class="shell-main">
+    <section class="hero hero-card" aria-labelledby="hero-title">
+      <img class="hero-photo" src="{{ hero_photo or url_for('static', filename='img/hero-scene.svg') }}" alt="" width="1600" height="760">
+      <div class="hero-copy">
+        <h1 id="hero-title">{{ _("Book your next adventure securely") }}</h1>
+        <p class="hero-sub">{{ _("Prices in dinars, seats you choose yourself, and an account that stays yours.") }}</p>
+        <a class="btn btn-solid hero-cta" href="{{ url_for('flights.search') }}">{{ _("Book now") }}</a>
+      </div>
+      <svg class="hero-wave" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="wv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1fb7b0" stop-opacity=".78"/><stop offset="1" stop-color="#06303f" stop-opacity=".96"/></linearGradient>
+          <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1d9a0" stop-opacity="0"/><stop offset=".7" stop-color="#f1d9a0"/><stop offset="1" stop-color="#c99a4a"/></linearGradient>
+        </defs>
+        <path d="M0 150C120 90 260 70 400 110S650 190 800 120 940 40 1000 70V260H0z" fill="url(#wv)"/>
+        <path d="M0 150C120 90 260 70 400 110S650 190 800 120 940 40 1000 70" fill="none" stroke="#7ff0e0" stroke-opacity=".55" stroke-width="2"/>
+        <path d="M520 235C700 238 880 190 1000 60" fill="none" stroke="url(#gd)" stroke-width="5" stroke-linecap="round"/>
+      </svg>
 
-    <ul class="trust-row">
-      <li><strong>{{ city_count }}</strong> {{ _('cities') }}</li>
-      <li><strong>{{ country_count }}</strong> {{ _('countries') }}</li>
-      <li>{{ _('Prices in') }} <strong>DZD, EUR, USD</strong></li>
-      <li>{{ _("Two-step login available") }}</li>
-    </ul>
+      <div class="hero-search">
+        <div class="hero-tabs" role="navigation" aria-label="{{ _('Search type') }}">
+          <a class="hero-tab" href="{{ url_for('main.index') }}" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 14 3 11.5l1.4-1.4 7 .6 4.2-4.2a1.8 1.8 0 1 1 2.6 2.6l-4.2 4.2.6 7-1.4 1.4L12.3 14.5"/></svg>{{ _("Flights") }}</a>
+          <a class="hero-tab" href="{{ url_for('main.countries') }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg>{{ _("Countries") }}</a>
+          <a class="hero-tab" href="{{ url_for('main.plan') }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg>{{ _("Plan by month") }}</a>
+        </div>
+        <h2 class="sr-only">{{ _("Where to next from Alger?") }}</h2>
+        {% include "_search_form.html" %}
+      </div>
+    </section>
+
+    {% if top_trips %}
+    <section class="discover" aria-labelledby="discover-title">
+      <div class="section-head">
+        <h2 id="discover-title">{{ _("Discover") }}: <span class="discover-names">{% for a in top_trips[:3] %}{{ _(a.city) }}{{ ", " if not loop.last }}{% endfor %}</span></h2>
+        <a class="view-all" href="{{ url_for('main.countries') }}">{{ _('All countries') }} <span class="arrow" aria-hidden="true">&rarr;</span></a>
+      </div>
+      <ul class="discover-row" aria-label="{{ _('Top trips from %(city)s', city=_(home.city if home else 'Alger')) }}">
+        {% for a in top_trips %}
+        {% set photo = photo_url(a.slug) %}
+        <li class="discover-card">
+          <a class="place-link" href="{{ url_for('flights.search', origin='ALG', destination=a.code) }}">
+            <span class="place-art tone-{{ a.tone }} {{ art_class(a.slug) }}" aria-hidden="true">{% if photo %}<img src="{{ photo }}" alt="" loading="lazy" width="960" height="720">{% endif %}</span>
+            <span class="discover-body">
+              <span class="discover-kicker">{{ _("SecurePass Exclusive") }}</span>
+              <span class="discover-title">{{ _(a.city) }}<span class="discover-country">{{ _(a.country) }}</span></span>
+              {% if home_fares.get(a.code) %}<span class="discover-price">{{ money(home_fares.get(a.code)) }}</span>{% endif %}
+            </span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
   </div>
-</section>
 
-{% if dashboard %}
-<section class="dashboard container" aria-labelledby="dash-title">
-  <h2 class="section-title" id="dash-title">{{ _('Your dashboard') }}</h2>
-  <div class="dash-grid">
-    <article class="glass-card">
+  <aside class="side-panel" aria-label="{{ _('Dashboard') }}">
+    <div class="side-brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="logo-shield" d="M12 1.5 3.5 4.8v6.4c0 5.1 3.6 9.5 8.5 11.3 4.9-1.8 8.5-6.2 8.5-11.3V4.8L12 1.5z"/><path class="logo-check" d="m8.3 12.1 2.6 2.6 4.9-5.1"/></svg>
+      <div><strong>SecurePass</strong><span>{{ _("Dashboard") }}</span></div>
+    </div>
+    {% if dashboard %}
+    <h2 class="sr-only">{{ _('Your dashboard') }}</h2>
+    <article class="side-card">
       <h3>{{ _('Your trips') }}</h3>
       {% if dashboard.next %}{% set b = dashboard.next %}
         <p class="dash-big">{{ _(b.flight.destination.city) }}</p>
@@ -37,7 +86,7 @@
         <a class="btn btn-ghost" href="{{ url_for('flights.search') }}">{{ _('Find a flight') }}</a>
       {% endif %}
     </article>
-    <article class="glass-card">
+    <article class="side-card">
       <h3>{{ _('Verified profile') }}</h3>
       <p class="dash-big dash-email">{{ current_user.email }}</p>
       <dl class="dash-facts">
@@ -46,7 +95,7 @@
       </dl>
       {% if not current_user.totp_enabled %}<a class="btn btn-ghost" href="{{ url_for('auth.two_factor_setup') }}">{{ _('Turn on two-factor login') }}</a>{% endif %}
     </article>
-    <article class="glass-card">
+    <article class="side-card">
       <h3>{{ _('Live updates') }}</h3>
       {% if dashboard.next %}{% set f = dashboard.next.flight %}
         <p class="dash-big">{{ _('Flight') }} {{ f.flight_no }}</p>
@@ -56,11 +105,64 @@
         <p class="dash-sub">{{ _('Your next flight will appear here.') }}</p>
       {% endif %}
     </article>
+    {% else %}
+    <article class="side-card">
+      <h3>{{ _('Your trips') }}</h3>
+      <p class="dash-sub">{{ _('Log in to see your trips and live flight updates.') }}</p>
+      <p class="dash-badges"><span class="chip-ok">&#10003; {{ _('Verified') }}</span> <span class="chip-ok">&#10003; {{ _('Safe') }}</span></p>
+      <a class="btn btn-solid" href="{{ url_for('auth.login') }}">{{ _('Log in') }}</a>
+    </article>
+    <article class="side-card">
+      <h3>{{ _('Protected accounts') }}</h3>
+      <dl class="dash-facts">
+        <div><dt>{{ _('Two-step login') }}</dt><dd>{{ _('Yes') }}</dd></div>
+        <div><dt>{{ _('Secure') }}</dt><dd>{{ _('Yes') }}</dd></div>
+        <div><dt>{{ _('cities') }}</dt><dd>{{ city_count }}</dd></div>
+        <div><dt>{{ _('countries') }}</dt><dd>{{ country_count }}</dd></div>
+      </dl>
+    </article>
+    {% endif %}
+  </aside>
+</div>
+
+{% if board %}
+<section class="board-section container reveal" aria-labelledby="board-title">
+  <div class="board">
+    <div class="board-head">
+      <div>
+        <h2 id="board-title">{{ _("Departures from Alger") }}</h2>
+        <p class="board-sub">{{ _("The next flights with seats left. Open one to choose your seats.") }}</p>
+      </div>
+      <p class="board-clock" aria-hidden="true"><span class="live-dot"></span> <span data-clock>--:--</span> <small>{{ _("Alger time") }}</small></p>
+    </div>
+    <div class="table-scroll">
+    <table class="board-table">
+      <thead><tr><th scope="col">{{ _("Time") }}</th><th scope="col">{{ _("Flight") }}</th><th scope="col">{{ _("To") }}</th><th scope="col">{{ _("Seats") }}</th><th scope="col">{{ _("Status") }}</th><th scope="col"><span class="sr-only">{{ _("Open") }}</span></th></tr></thead>
+      <tbody>
+      {% for r in board %}{% set f = r.flight %}
+        <tr>
+          <td class="b-time">{{ f.departs_at.strftime('%H:%M') }}<small>{{ f.departs_at.strftime('%d/%m') }}</small></td>
+          <td class="b-flight">{{ f.flight_no }}</td>
+          <td class="b-dest"><strong>{{ _(f.destination.city) }}</strong> <span>{{ f.destination.code }}</span></td>
+          <td class="b-seats{% if r.few %} is-few{% endif %}">{{ f.seats_available }}</td>
+          <td><span class="b-status b-{{ 'go' if r.status == 'Boarding' else 'ok' }}">{{ _(r.status) }}</span></td>
+          <td class="b-go"><a href="{{ url_for('flights.search', origin='ALG', destination=f.destination.code) }}" aria-label="{{ _('Open') }}: {{ _(f.destination.city) }}">&rarr;</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
   </div>
+  <ul class="stat-strip">
+    <li><strong data-count="{{ city_count }}">{{ city_count }}</strong><span>{{ _('cities') }}</span></li>
+    <li><strong data-count="{{ country_count }}">{{ country_count }}</strong><span>{{ _('countries') }}</span></li>
+    <li><strong>3</strong><span>{{ _('currencies') }}</span></li>
+    <li><strong>3</strong><span>{{ _('languages') }}</span></li>
+  </ul>
 </section>
 {% endif %}
 
-<section class="seasonal container" id="seasons" aria-labelledby="seasons-title">
+<section class="seasonal container reveal" id="seasons" aria-labelledby="seasons-title">
   <div class="section-head">
     <h2 id="seasons-title">{{ _('Where to go this %(season)s', season=_(season)) }}</h2>
     <a class="view-all" href="{{ url_for('main.plan') }}">{{ _('Plan by month') }} <span class="arrow" aria-hidden="true">&rarr;</span></a>
@@ -83,22 +185,7 @@
   {% endif %}
 </section>
 
-{% if top_trips %}
-<section class="trips container" aria-labelledby="trips-title">
-  <div class="section-head">
-    <h2 id="trips-title">{{ _('Top trips from %(city)s', city=_(home.city if home else 'Alger')) }}</h2>
-    <a class="view-all" href="{{ url_for('main.countries') }}">{{ _('All countries') }} <span class="arrow" aria-hidden="true">&rarr;</span></a>
-  </div>
-  <ul class="place-grid trips-grid">
-    {% for a in top_trips %}
-      {{ place_card(url_for('flights.search', origin='ALG', destination=a.code), _(a.city), _(a.country), "",
-                    home_fares.get(a.code), a.slug, a.tone, art_class(a.slug)) }}
-    {% endfor %}
-  </ul>
-</section>
-{% endif %}
-
-<section class="how container" aria-labelledby="how-title">
+<section class="how container reveal" aria-labelledby="how-title">
   <h2 class="section-title" id="how-title">{{ _("How booking works") }}</h2>
   <p class="section-lead">{{ _("Four clear steps from search to boarding pass, with nothing hidden.") }}</p>
   <ol class="steps">
@@ -109,7 +196,7 @@
   </ol>
 </section>
 
-<section class="features container" aria-labelledby="security-title">
+<section class="features container reveal" aria-labelledby="security-title">
   <h2 class="section-title" id="security-title">{{ _("Security you can see") }}</h2>
   <p class="section-lead">{{ _("The same care that goes into your trip goes into protecting your account and your bookings.") }}</p>
   <div class="feature-grid">
