@@ -52,7 +52,15 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
 
     @login_manager.user_loader
     def load_user(user_id: str):
-        return db.session.get(models.User, int(user_id)) if user_id.isdigit() else None
+        ident, sep, epoch = user_id.partition(":")
+        if not ident.isdigit() or len(ident) > 10 or (sep and not (epoch.isdigit() and len(epoch) < 10)):
+            return None
+        user = db.session.get(models.User, int(ident))
+        # A session made before "log out everywhere" carries an older number and is refused.
+        # A plain id (a session from before this feature) counts as number 0.
+        if user is None or (int(epoch) if epoch.isdigit() else 0) != (user.session_epoch or 0):
+            return None
+        return user
 
     for blueprint in (main_bp, flights_bp, auth_bp, bookings_bp, admin_bp):
         app.register_blueprint(blueprint)

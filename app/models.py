@@ -133,6 +133,9 @@ class User(UserMixin, db.Model):
     totp_secret = db.Column(db.String(64), nullable=True)
     totp_enabled = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     last_totp_step = db.Column(db.Integer, nullable=True)  # blocks re-using a code (replay)
+    # Raised to log the account out of every device at once (Phase 31). It is part of the
+    # session's user id, so a session made before the change no longer matches.
+    session_epoch = db.Column(db.Integer, nullable=False, default=0, server_default="0")
 
     __table_args__ = (db.CheckConstraint("role IN ('user', 'admin')", name="ck_user_role"),)
 
@@ -142,6 +145,9 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    def get_id(self) -> str:
+        return f"{self.id}:{self.session_epoch or 0}"
 
     def is_locked(self, now: datetime | None = None) -> bool:
         now = now or utcnow()
