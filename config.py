@@ -37,6 +37,8 @@ def database_url() -> str:
 
 
 class Config:
+    REQUIRE_ADMIN_2FA = False  # switched on in ProductionConfig
+
     # SR11: no hard-coded secret. Production must set SECRET_KEY in the environment.
     SECRET_KEY = os.environ.get("SECRET_KEY")
 
@@ -104,6 +106,8 @@ class ProductionConfig(Config):
     # and has no Domain, so no other site or subdomain can overwrite it.
     SESSION_COOKIE_NAME = "__Host-session"
     PREFERRED_URL_SCHEME = "https"
+    # Administrators must turn on two-factor login before they can open the admin area.
+    REQUIRE_ADMIN_2FA = os.environ.get("REQUIRE_ADMIN_2FA", "1") == "1"
 
 
 CONFIGS = {

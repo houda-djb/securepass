@@ -81,6 +81,19 @@
         </form>
       </article>
 
+      <article class="panel" id="sessions">
+        <h2>{{ _("Devices") }}</h2>
+        <p class="panel-sub">{{ _("Signed in on a shared or lost device? Log out of every other device at once. This device stays signed in. Changing or resetting your password does this too.") }}</p>
+        <form method="post" action="{{ url_for('auth.revoke_sessions') }}" class="stack-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field">
+            <label for="revoke-password">{{ _("Current password") }}</label>
+            <input id="revoke-password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+          </div>
+          <button class="btn btn-ghost" type="submit">{{ _("Log out of all other devices") }}</button>
+        </form>
+      </article>
+
       <article class="panel" id="delete">
         <h2>Your data</h2>
         <p class="panel-sub">Download everything we hold about you (profile, bookings, passenger names and security events) as a file. It never contains passwords or secrets.</p>

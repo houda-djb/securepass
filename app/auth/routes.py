@@ -171,6 +171,8 @@ EVENT_LABELS = {
     "cancel_refused": "Cancellation refused (wrong password or code)",
     "cancel_burst_blocked": "Cancellation blocked: too many in a short time",
     "cancel_burst_alert": "Several bookings cancelled in a few minutes",
+    "sessions_revoked": "Logged out of every other device",
+    "sessions_revoke_refused": "Log out everywhere refused (wrong password)",
     "cancel_ip_blocked": "Cancellation blocked: too many from one network address",
     "cancel_site_blocked": "Cancellations paused: unusual activity on the whole site",
     "booking_restored": "Cancellation undone (booking restored)",
@@ -240,12 +242,33 @@ def change_password():
     user.set_password(new)
     user.failed_logins = 0
     user.locked_until = None
+    user.session_epoch = (user.session_epoch or 0) + 1  # every other device is logged out
     db.session.commit()
     session.clear()  # a fresh session after a credential change (same idea as at login)
     login_user(user)
     session.permanent = True
     audit("password_changed", user)
     flash("Your password has been changed.", "success")
+    return redirect(url_for("auth.account"))
+
+
+@bp.route("/account/sessions/revoke", methods=["POST"])
+@login_required
+@limiter.limit("5 per hour", methods=["POST"])
+def revoke_sessions():
+    """Log out of every other device. The password is asked again, like for any sensitive change."""
+    user = current_user._get_current_object()
+    if not user.check_password(request.form.get("password", "")[:128]):
+        audit("sessions_revoke_refused", user, "wrong password")
+        flash("That is not your current password.", "error")
+        return redirect(url_for("auth.account"))
+    user.session_epoch = (user.session_epoch or 0) + 1
+    db.session.commit()
+    session.clear()
+    login_user(user)  # this device stays signed in with the new number
+    session.permanent = True
+    audit("sessions_revoked", user)
+    flash("You were logged out of every other device. This one stays signed in.", "success")
     return redirect(url_for("auth.account"))
 
 
@@ -465,6 +488,7 @@ def reset_password(token: str):
             user.set_password(form.password.data)
             user.failed_logins = 0
             user.locked_until = None
+            user.session_epoch = (user.session_epoch or 0) + 1  # a reset logs out every device
             audit("password_reset", user)  # also saves the change above
             flash("Your password was changed. You can log in now.", "success")
             return redirect(url_for("auth.login"))
