@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Undo cancellation") }} {{ booking.reference }} | SecurePass{% endblock %}
+
+{% block content %}
+<section class="container detail narrow">
+  <a class="back-link" href="{{ url_for('bookings.detail', reference=booking.reference) }}"><span class="arrow" aria-hidden="true">&larr;</span> {{ _('Back to booking') }}</a>
+  <h1>{{ _("Undo this cancellation?") }}</h1>
+  <p class="panel-sub">{{ _("Booking") }} <strong>{{ booking.reference }}</strong>: {{ booking.flight.origin.city }} &rarr; {{ booking.flight.destination.city }}, {{ booking.flight.departs_at.strftime('%d %B %Y') }}.
+    {{ _("If it was not you who cancelled it, restoring it puts your booking back as it was. This only works while the seats are still free.") }}</p>
+  <form method="post" action="{{ url_for('bookings.restore', reference=booking.reference) }}" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="btn-row">
+      <button class="btn btn-solid" type="submit">{{ _("Restore my booking") }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('bookings.detail', reference=booking.reference) }}">{{ _("Leave it cancelled") }}</a>
+    </div>
+    <p class="detail-note">{{ _("If this was not you, also change your password and turn on two-factor login.") }}</p>
+  </form>
+</section>
+{% endblock %}

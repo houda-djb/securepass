@@ -171,6 +171,9 @@ EVENT_LABELS = {
     "cancel_refused": "Cancellation refused (wrong password or code)",
     "cancel_burst_blocked": "Cancellation blocked: too many in a short time",
     "cancel_burst_alert": "Several bookings cancelled in a few minutes",
+    "cancel_ip_blocked": "Cancellation blocked: too many from one network address",
+    "cancel_site_blocked": "Cancellations paused: unusual activity on the whole site",
+    "booking_restored": "Cancellation undone (booking restored)",
     "account_delete_refused": "Account deletion refused",
 }
 HISTORY_LENGTH = 8

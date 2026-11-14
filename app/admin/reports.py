@@ -101,5 +101,19 @@ def cancellation_rows(limit: int = 200) -> tuple[list[dict], int]:
         if b.cancelled_at and b.cancelled_at >= day_ago:
             per_user[b.user_id] = per_user.get(b.user_id, 0) + 1
     result = [{"booking": b, "flagged": per_user.get(b.user_id, 0) >= SUSPICIOUS_COUNT,
-               "unexplained": not b.cancel_reason} for b in rows]
+               "unexplained": not b.cancel_reason, "restorable": not b.flight.has_departed} for b in rows]
     return result, sum(1 for r in result if r["flagged"] or r["unexplained"])
+
+
+def shield_status() -> dict:
+    """What the cancellation shield did in the last 24 hours, and the limits it applies."""
+    from app.bookings.cancellation import BURST_LIMIT, ip_limit, site_limit
+    from app.models import AuditLog
+    since = utcnow() - timedelta(days=1)
+
+    def count(event):
+        return db.session.scalar(select(func.count()).select_from(AuditLog)
+                                 .where(AuditLog.event_type == event, AuditLog.created_at >= since)) or 0
+    return {"account_blocked": count("cancel_burst_blocked"), "address_blocked": count("cancel_ip_blocked"),
+            "site_blocked": count("cancel_site_blocked"), "restored": count("booking_restored"),
+            "limits": {"account": BURST_LIMIT, "address": ip_limit(), "site": site_limit()}}

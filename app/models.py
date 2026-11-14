@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -186,6 +186,9 @@ class SeatHold(db.Model):
     __table_args__ = (db.CheckConstraint("passengers BETWEEN 1 AND 9", name="ck_hold_passengers"),)
 
 
+UNDO_HOURS = 24  # how long the owner can undo a cancellation
+
+
 class Booking(db.Model):
     """A reservation of seats on one flight by one user (FR9-FR12)."""
 
@@ -230,6 +233,13 @@ class Booking(db.Model):
     @property
     def can_cancel(self) -> bool:
         return self.status == "confirmed" and not self.flight.has_departed
+
+    @property
+    def can_restore(self) -> bool:
+        """A cancelled booking can be brought back by its owner for UNDO_HOURS (Phase 30)."""
+        return (self.status == "cancelled" and self.cancelled_at is not None
+                and utcnow() - self.cancelled_at < timedelta(hours=UNDO_HOURS)
+                and not self.flight.has_departed)
 
 
 class Passenger(db.Model):

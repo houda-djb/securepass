@@ -15,6 +15,7 @@ from app.admin.queries import (EVENT_STYLES, EVENT_TYPES, bookings_per_day, buil
                                dashboard_stats, locked_users, recent_events)
 from app.admin import reports
 from app.admin.scans import load_summary
+from app.bookings.service import BookingError, restore_booking
 from app.extensions import db
 from app.models import Airline, Airport, Booking, Flight, User, utcnow
 from app.security import audit
@@ -55,7 +56,24 @@ def sales_reports():
 @bp.route("/cancellations")
 def cancellations():
     rows, attention = reports.cancellation_rows()
-    return render_template("admin/cancellations.html", rows=rows, attention=attention)
+    return render_template("admin/cancellations.html", rows=rows, attention=attention,
+                           shield=reports.shield_status())
+
+
+@bp.route("/bookings/<reference>/restore", methods=["POST"])
+def restore_cancelled(reference: str):
+    """An administrator brings back a booking that was cancelled by mistake or by an attacker."""
+    booking = db.session.scalar(select(Booking).where(Booking.reference == reference[:8]))
+    if booking is None:
+        abort(404)
+    try:
+        restore_booking(booking, by_admin=True)
+    except BookingError as error:
+        flash(str(error), "error")
+    else:
+        audit("booking_restored", current_user, f"{booking.reference}: restored by an administrator")
+        flash(f"Booking {booking.reference} was restored.", "success")
+    return redirect(url_for("admin.cancellations"))
 
 
 @bp.route("/reports/bookings.csv")

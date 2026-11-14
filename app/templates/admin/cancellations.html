@@ -9,10 +9,22 @@
   <p class="panel-sub">Every cancelled booking with who made it, why and from where.
     {% if attention %}<strong>{{ attention }}</strong> need a look: an account that cancelled {{ 3 }} or more bookings in a day, or a cancellation with no reason recorded.{% else %}Nothing looks unusual.{% endif %}</p>
 
+  <div class="shield-grid">
+    <article class="shield-card"><h2>Cancellation shield</h2>
+      <p class="panel-sub">Last 24 hours. Limits: {{ shield.limits.account }} per account in 10 minutes, {{ shield.limits.address }} per network address per hour, {{ shield.limits.site }} on the whole site in 10 minutes.</p>
+      <dl class="dash-facts">
+        <div><dt>Blocked: one account</dt><dd>{{ shield.account_blocked }}</dd></div>
+        <div><dt>Blocked: one address</dt><dd>{{ shield.address_blocked }}</dd></div>
+        <div><dt>Paused: whole site</dt><dd>{{ shield.site_blocked }}</dd></div>
+        <div><dt>Undone by owners or admins</dt><dd>{{ shield.restored }}</dd></div>
+      </dl>
+    </article>
+  </div>
+
   {% if rows %}
   <div class="table-wrap">
   <table class="report-table">
-    <thead><tr><th scope="col">When (UTC)</th><th scope="col">Booking</th><th scope="col">Account</th><th scope="col">Reason</th><th scope="col">Address</th><th scope="col">Check</th></tr></thead>
+    <thead><tr><th scope="col">When (UTC)</th><th scope="col">Booking</th><th scope="col">Account</th><th scope="col">Reason</th><th scope="col">Address</th><th scope="col">Check</th><th scope="col">Action</th></tr></thead>
     <tbody>
     {% for r in rows %}{% set b = r.booking %}
       <tr>
@@ -22,6 +34,11 @@
         <td>{{ reason_label(b.cancel_reason) }}</td>
         <td>{{ b.cancelled_ip or '' }}</td>
         <td>{% if r.flagged %}<span class="badge badge-warn">Many today</span>{% endif %}{% if r.unexplained %} <span class="badge badge-neutral">No reason</span>{% endif %}</td>
+        <td>{% if r.restorable %}
+          <form method="post" action="{{ url_for('admin.restore_cancelled', reference=b.reference) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost btn-sm" type="submit">Restore</button>
+          </form>{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>
