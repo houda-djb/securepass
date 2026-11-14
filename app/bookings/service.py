@@ -111,3 +111,29 @@ def cancel_booking(user_id: int, booking: Booking, reason: str | None = None, ip
     )
     db.session.execute(delete(SeatAssignment).where(SeatAssignment.booking_id == booking.id))  # free the seats
     db.session.commit()
+
+def restore_booking(booking: Booking, by_admin: bool = False) -> None:
+    """Undo a cancellation: the booking is confirmed again and its seats are taken back.
+
+    The owner has UNDO_HOURS to do this; an administrator can restore any booking that has not
+    departed. If the seats were sold in the meantime nothing changes and the person is told so.
+    """
+    if booking.flight.has_departed:
+        raise BookingError("This flight has already departed.")
+    if not by_admin and not booking.can_restore:
+        raise BookingError("The 24 hours to undo this cancellation have passed.")
+
+    restored = db.session.execute(
+        update(Booking).where(Booking.id == booking.id, Booking.status == "cancelled")
+        .values(status="confirmed", cancelled_at=None, cancel_reason=None, cancelled_ip=None))
+    if restored.rowcount != 1:
+        db.session.rollback()
+        raise BookingError("This booking is not cancelled.")
+    claimed = db.session.execute(
+        update(Flight).where(Flight.id == booking.flight_id, Flight.seats_available >= booking.passengers)
+        .values(seats_available=Flight.seats_available - booking.passengers))
+    if claimed.rowcount != 1:  # the seats were sold after the cancellation
+        db.session.rollback()
+        raise BookingError("Those seats were sold after the cancellation, so the booking can't be "
+                           "restored. Please contact support.")
+    db.session.commit()

@@ -9,14 +9,16 @@ from app.bookings import bp
 from app.bookings.barcode import bars, total_width
 from app.bookings.forms import BookingForm
 from app.bookings.holds import HOLD_MINUTES, active_hold, place_hold, seconds_left
-from app.bookings.cancellation import BURST_LIMIT, REASONS, clean_reason, recent_cancellations, too_many_recent
-from app.bookings.notify import send_cancellation_notice, send_confirmation
+from app.bookings.cancellation import (BURST_LIMIT, BURST_WINDOW, IP_WINDOW, REASONS, SITE_WINDOW, clean_reason,
+                                       ip_limit, recent_cancellations, seen_recently, site_limit, site_paused,
+                                       too_many_from_address, too_many_recent)
+from app.bookings.notify import send_admin_alert, send_cancellation_notice, send_confirmation
 from app.bookings.payment import METHODS, clean_method
 from app.bookings.passengers import read_passengers, submitted_values
 from app.bookings.seats import (CAPACITY, EXIT_ROWS, LEFT, RIGHT, ROWS, choose_seats, is_valid_label,
                                 seat_problem, taken_seats)
 from app.bookings.service import (MAX_PASSENGERS, BookingError, booking_problem, cancel_booking,
-                                  create_booking)
+                                  create_booking, restore_booking)
 from app.auth.routes import _second_factor_ok
 from app.extensions import db, limiter
 from app.models import Booking, Flight, Passenger
@@ -135,6 +137,14 @@ def ticket(reference: str):
     return render_template("bookings/ticket.html", booking=booking, bars=items, bar_width=total_width(items))
 
 
+def _alert(event: str, window, user, detail: str, text: str) -> None:
+    """Log a blocked cancellation and, the first time in the window, email the administrators."""
+    first = not seen_recently(event, window)
+    audit(event, user, detail)
+    if first:
+        send_admin_alert("SecurePass alert: cancellations blocked", text + "\n\nOpen Admin, then Cancellations, to review.")
+
+
 def _cancel_page(booking, chosen="", problem=None):
     return render_template("bookings/cancel.html", booking=booking, reasons=REASONS, chosen=chosen,
                            problem=problem, needs_code=current_user.totp_enabled), (400 if problem else 200)
@@ -164,10 +174,23 @@ def cancel(reference: str):
     chosen = clean_reason(request.form.get("reason"))
     if chosen is None:
         return _cancel_page(booking, problem="Please choose a reason.")
+    ip = (request.remote_addr or "")[:45]
     if too_many_recent(current_user.id):
-        audit("cancel_burst_blocked", current_user, booking.reference)
+        _alert("cancel_burst_blocked", BURST_WINDOW, current_user, booking.reference,
+               f"{current_user.email} tried to cancel more than {BURST_LIMIT} bookings in 10 minutes.")
         return _cancel_page(booking, chosen, "Too many cancellations in a short time. For your safety, "
                                              "wait ten minutes or contact support.")
+    if too_many_from_address(ip):
+        _alert("cancel_ip_blocked", IP_WINDOW, current_user, f"{booking.reference} from {ip}",
+               f"More than {ip_limit()} cancellations in one hour came from the address {ip}.")
+        return _cancel_page(booking, chosen, "Too many cancellations came from your network. "
+                                             "For safety, try again later or contact support.")
+    if site_paused():
+        _alert("cancel_site_blocked", SITE_WINDOW, current_user, booking.reference,
+               f"More than {site_limit()} bookings were cancelled in 10 minutes. New cancellations are "
+               "paused until the window passes. Check the Cancellations page.")
+        return _cancel_page(booking, chosen, "Cancellations are paused for a few minutes because of unusual "
+                                             "activity. Please try again shortly or contact support.")
     if not current_user.check_password(request.form.get("password", "")[:128]):
         audit("cancel_refused", current_user, f"{booking.reference}: wrong password")
         return _cancel_page(booking, chosen, "That is not your current password.")
@@ -176,7 +199,6 @@ def cancel(reference: str):
         audit("cancel_refused", current_user, f"{booking.reference}: wrong code")
         return _cancel_page(booking, chosen, "That code is not right.")
 
-    ip = (request.remote_addr or "")[:45]
     try:
         cancel_booking(current_user.id, booking, chosen, ip)
     except BookingError as error:
@@ -189,6 +211,27 @@ def cancel(reference: str):
         db.session.refresh(booking)
         send_cancellation_notice(booking, ip)
         flash("Booking cancelled. Your seats have been released.", "success")
+    return redirect(url_for("bookings.detail", reference=reference))
+
+
+@bp.route("/<reference>/restore", methods=["GET", "POST"])
+@login_required
+@limiter.limit("10 per hour", methods=["POST"], key_func=lambda: f"restore-{current_user.get_id()}")
+def restore(reference: str):
+    """Undo a cancellation within 24 hours. Opening the page changes nothing; only the button does."""
+    booking = _own_booking_or_404(reference)
+    if not booking.can_restore:
+        flash("This booking can't be restored. Either it is not cancelled or the 24 hours have passed.", "info")
+        return redirect(url_for("bookings.detail", reference=reference))
+    if request.method == "GET":
+        return render_template("bookings/restore.html", booking=booking)
+    try:
+        restore_booking(booking)
+    except BookingError as error:
+        flash(str(error), "error")
+    else:
+        audit("booking_restored", current_user, booking.reference)
+        flash("Your booking is confirmed again. Choose your seats again if you had picked some.", "success")
     return redirect(url_for("bookings.detail", reference=reference))
 
 

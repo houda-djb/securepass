@@ -55,11 +55,22 @@ def _deliver(to: str, subject: str, body: str) -> None:
 def send_cancellation_notice(booking, ip: str) -> None:
     """Tell the owner at once, so a cancellation they did not make is noticed within minutes."""
     from app.bookings.cancellation import reason_label
+    undo = url_for("bookings.restore", reference=booking.reference, _external=True)
     body = (f"Your SecurePass booking {booking.reference} "
             f"({booking.flight.origin.city} to {booking.flight.destination.city}, "
             f"{booking.flight.departs_at.strftime('%d %B %Y')}) was cancelled.\n\n"
             f"Reason given: {reason_label(booking.cancel_reason)}\n"
             f"Network address: {ip}\n\n"
             "If this was you, nothing else is needed. If it was not you, change your password now "
-            f"({url_for('auth.forgot_password', _external=True)}) and turn on two-factor login.\n")
+            f"({url_for('auth.forgot_password', _external=True)}) and turn on two-factor login.\n\n"
+            f"You can undo this cancellation for 24 hours, as long as the seats are still free: {undo}\n")
     _deliver(booking.user.email, f"Booking {booking.reference} was cancelled", body)
+
+
+def send_admin_alert(subject: str, body: str) -> None:
+    """Email every administrator. Used when the cancellation shield blocks something."""
+    from sqlalchemy import select
+    from app.extensions import db
+    from app.models import User
+    for email in db.session.scalars(select(User.email).where(User.role == "admin")).all():
+        _deliver(email, subject, body)

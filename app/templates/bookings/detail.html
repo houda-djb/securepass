@@ -57,6 +57,10 @@
     <p><a class="btn btn-danger" href="{{ url_for('bookings.cancel_form', reference=booking.reference) }}">{{ _("Cancel this booking") }}</a></p>
   {% elif booking.is_cancelled %}
     <p class="detail-note">This booking was cancelled{% if booking.cancelled_at %} on {{ booking.cancelled_at.strftime('%d %b %Y, %H:%M') }} UTC{% endif %}{% if booking.cancel_reason %} ({{ reason_label(booking.cancel_reason) }}){% endif %}. Its seats were released.</p>
+    {% if booking.can_restore %}
+    <p><a class="btn btn-solid" href="{{ url_for('bookings.restore', reference=booking.reference) }}">{{ _("Undo this cancellation") }}</a>
+      <span class="detail-note">{{ _("You can undo it for 24 hours if the seats are still free.") }}</span></p>
+    {% endif %}
   {% else %}
     <p class="detail-note">This flight has already departed, so the booking can't be changed.</p>
   {% endif %}
