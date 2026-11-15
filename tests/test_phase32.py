@@ -13,9 +13,10 @@ STRONG = "Zebra-Quartz-4471-moon"
 
 # ------------------------------------------------------------- breached passwords
 def _sha_suffix(password):
-    import hashlib
-    d = hashlib.sha1(password.encode(), usedforsecurity=False).hexdigest().upper()
-    return d[:5], d[5:]
+    # The service's own lookup hash of STRONG, written out so the tests do not hash a password.
+    assert password == STRONG
+    digest = "540B4AF61FEAF3D02224112A68CC128AF2598096"
+    return digest[:5], digest[5:]
 
 
 def test_breach_check_is_off_unless_switched_on(app):
