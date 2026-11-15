@@ -15,7 +15,8 @@ from sqlalchemy.orm import joinedload
 from app.auth import bp
 from app.bookings.service import BookingError, cancel_booking
 from app.extensions import db, limiter
-from app.models import AuditLog, Booking, Passenger, RecoveryCode, SeatAssignment, User
+from app.bookings.holds import release_user_holds
+from app.models import AuditLog, Booking, Passenger, RecoveryCode, SeatAssignment, User, UserSession
 from app.security import audit
 
 
@@ -73,6 +74,8 @@ def delete_account(user: User) -> None:
         db.session.execute(delete(SeatAssignment).where(SeatAssignment.booking_id.in_(ids)))
         db.session.execute(delete(Passenger).where(Passenger.booking_id.in_(ids)))
         db.session.execute(delete(Booking).where(Booking.id.in_(ids)))
+    release_user_holds(user.id)  # seats held at checkout go back on sale
+    db.session.execute(delete(UserSession).where(UserSession.user_id == user.id))
     db.session.execute(delete(RecoveryCode).where(RecoveryCode.user_id == user.id))
     db.session.execute(update(AuditLog).where(AuditLog.user_id == user.id).values(user_id=None))
     db.session.execute(delete(User).where(User.id == user.id))

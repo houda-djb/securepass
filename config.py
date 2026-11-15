@@ -37,7 +37,9 @@ def database_url() -> str:
 
 
 class Config:
-    REQUIRE_ADMIN_2FA = False  # switched on in ProductionConfig
+    REQUIRE_ADMIN_2FA = False
+    BREACH_CHECK = False
+    REQUIRE_EMAIL_VERIFICATION = False  # switched on in ProductionConfig
 
     # SR11: no hard-coded secret. Production must set SECRET_KEY in the environment.
     SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -108,6 +110,11 @@ class ProductionConfig(Config):
     PREFERRED_URL_SCHEME = "https"
     # Administrators must turn on two-factor login before they can open the admin area.
     REQUIRE_ADMIN_2FA = os.environ.get("REQUIRE_ADMIN_2FA", "1") == "1"
+    # Look new passwords up in the Have I Been Pwned range service (only 5 characters of a hash are sent).
+    BREACH_CHECK = os.environ.get("BREACH_CHECK", "1") == "1"
+    # Booking needs a confirmed email, but only when this site can actually send email.
+    REQUIRE_EMAIL_VERIFICATION = bool(os.environ.get("SMTP_HOST")) and \
+        os.environ.get("REQUIRE_EMAIL_VERIFICATION", "1") == "1"
 
 
 CONFIGS = {

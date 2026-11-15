@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.admin.scans import run_scans, save_summary
 from app.auth.passwords import password_problems
 from app.extensions import db
-from app.models import Airport, User
+from app.models import Airport, User, utcnow
 from app.seed import seed_demo_data
 
 
@@ -50,7 +50,7 @@ def create_admin_command(email: str, password: str) -> None:
     if db.session.scalar(select(User).where(User.email == email)) is not None:
         raise click.ClickException("An account with that email already exists.")
 
-    admin = User(email=email, role="admin")
+    admin = User(email=email, role="admin", email_verified_at=utcnow())
     admin.set_password(password)
     db.session.add(admin)
     db.session.commit()
@@ -86,7 +86,7 @@ def bootstrap_admin_command() -> None:
     if db.session.scalar(select(User).where(User.email == email)) is not None:
         click.echo("bootstrap-admin: that email already belongs to a normal account, nothing changed.")
         return
-    admin = User(email=email, role="admin")
+    admin = User(email=email, role="admin", email_verified_at=utcnow())
     admin.set_password(password)
     db.session.add(admin)
     db.session.commit()

@@ -1535,3 +1535,9 @@ td.b-go a:hover { background: var(--blue-500); color: #04121b; border-color: tra
 .shield-card { padding: 1.2rem 1.4rem; border-radius: 20px; background: var(--card); border: 1px solid var(--line-strong); }
 .shield-card h2 { margin: 0 0 .3rem; font-size: 1.15rem; }
 .btn-sm { padding: .3rem .8rem; font-size: .85rem; }
+
+/* Phase 32: signed-in devices */
+.device-list{list-style:none;margin:0 0 1rem;padding:0;display:grid;gap:.5rem}
+.device-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.6rem .8rem;border:1px solid var(--line, rgba(255,255,255,.14));border-radius:12px}
+.device-row .badge{margin-left:.5rem}
+.btn-small{padding:.35rem .8rem;font-size:.85rem}

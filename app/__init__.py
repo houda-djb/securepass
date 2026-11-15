@@ -76,6 +76,8 @@ def create_app(config_name: str | None = None, overrides: dict | None = None) ->
     register_error_handlers(app)
     from app.bookings import holds
     holds.register(app)
+    from app.auth import devices
+    devices.register(app)
     return app
 
 

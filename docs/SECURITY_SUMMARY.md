@@ -10,6 +10,10 @@ Unexplained cancellations have only a few possible causes. Each one now has a co
 |---|---|---|
 | Someone logs in to a customer's account (stolen or guessed password) and cancels | A cancellation asks for the account password again, and for a code from the authenticator app when two-step login is on | test_cancel_with_wrong_password_is_refused_and_logged, test_two_factor_account_must_give_a_code |
 | A stolen session is used to cancel many bookings at once | At most 3 cancellations in 10 minutes per account; the 4th is refused and an alert is logged | test_four_cancellations_in_ten_minutes_are_stopped |
+| A leaked password is reused on this site | New passwords are checked against known breaches (only 5 characters of a hash are sent) | test_breached_password_is_found, test_only_five_characters_are_sent, test_service_down_never_blocks |
+| Fake accounts or mistyped emails | Booking needs a confirmed email address (when the site can send email) | test_booking_needs_a_confirmed_email_when_required, test_bad_or_changed_link_is_refused |
+| A device is lost or left signed in | The account page lists signed-in devices; each one can be signed out alone | test_revoking_one_device_signs_only_that_one_out, test_unknown_session_id_is_refused |
+| A vulnerability is introduced in the code | CodeQL scans every pull request and weekly | test_codeql_workflow_exists |
 | A hidden page on another site tricks a logged-in customer into cancelling | Every action needs a secret token tied to the visit; opening a link never cancels anything | test_a_get_request_never_cancels, test_booking_and_cancel_need_a_csrf_token |
 | A customer cancels another customer's booking by guessing its reference | A booking can only be opened or cancelled by its owner | test_only_the_owner_can_cancel |
 | A cancellation is made with a made-up or empty reason | The reason must come from a fixed list; anything else is refused | test_cancel_without_reason_is_refused, test_cancel_with_unknown_reason_is_refused |

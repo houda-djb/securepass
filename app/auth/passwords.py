@@ -1,3 +1,4 @@
+from app.auth.breach import is_breached
 from app.auth.common_passwords import is_too_common
 
 
@@ -13,4 +14,6 @@ def password_problems(password, email=""):
         problems.append("Your password can't be the same as your email.")
     elif email and email.split("@")[0].lower() in password.lower():
         problems.append("Don't use your email name in the password.")
+    if not problems and is_breached(password):  # last, so a weak password never costs a network call
+        problems.append("This password appears in known data breaches. Choose a different one.")
     return problems
