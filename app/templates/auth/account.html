@@ -81,8 +81,38 @@
         </form>
       </article>
 
+      <article class="panel" id="verify">
+        <h2>{{ _("Email address") }}</h2>
+        {% if current_user.email_verified %}
+        <p class="panel-sub">{{ _("Your email address is confirmed.") }}</p>
+        {% else %}
+        <p class="panel-sub">{{ _("Your email address is not confirmed yet. Open the link we sent you. Booking needs a confirmed address.") }}</p>
+        <form method="post" action="{{ url_for('auth.resend_verification') }}" class="stack-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost" type="submit">{{ _("Send the link again") }}</button>
+        </form>
+        {% endif %}
+      </article>
+
       <article class="panel" id="sessions">
         <h2>{{ _("Devices") }}</h2>
+        <ul class="device-list" aria-label="{{ _('Signed-in devices') }}">
+          {% for row, name in devices %}
+          <li class="device-row">
+            <div>
+              <strong>{{ name }}</strong>
+              {% if row.sid == current_sid %}<span class="badge">{{ _("This device") }}</span>{% endif %}
+              <div class="field-hint">{{ row.ip }} · {{ _("last active") }} {{ row.last_seen_at.strftime("%d %b %H:%M") }} UTC</div>
+            </div>
+            {% if row.sid != current_sid %}
+            <form method="post" action="{{ url_for('auth.revoke_device', device_id=row.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-ghost btn-small" type="submit">{{ _("Sign out") }}</button>
+            </form>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
         <p class="panel-sub">{{ _("Signed in on a shared or lost device? Log out of every other device at once. This device stays signed in. Changing or resetting your password does this too.") }}</p>
         <form method="post" action="{{ url_for('auth.revoke_sessions') }}" class="stack-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

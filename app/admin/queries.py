@@ -14,7 +14,7 @@ EVENT_TYPES = (
     "register", "login_success", "login_failed", "login_blocked", "account_locked",
     "account_unlocked", "logout", "access_denied", "booking_created", "booking_cancelled",
     "flight_created", "flight_updated", "flight_deleted",
-    "password_changed", "password_reset_requested", "password_reset", "report_exported", "cancel_refused", "cancel_burst_blocked", "cancel_burst_alert", "cancel_ip_blocked", "cancel_site_blocked", "booking_restored", "sessions_revoked", "sessions_revoke_refused", "data_exported", "account_deleted", "account_delete_refused",
+    "password_changed", "password_reset_requested", "password_reset", "report_exported", "cancel_refused", "cancel_burst_blocked", "cancel_burst_alert", "cancel_ip_blocked", "cancel_site_blocked", "booking_restored", "sessions_revoked", "sessions_revoke_refused", "device_revoked", "email_verified", "verification_sent", "data_exported", "account_deleted", "account_delete_refused",
 )
 
 # Badge colour for each event type on the dashboard.

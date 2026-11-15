@@ -5,6 +5,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 
+from app.auth.verify import must_verify
 from app.bookings import bp
 from app.bookings.barcode import bars, total_width
 from app.bookings.forms import BookingForm
@@ -74,6 +75,9 @@ def new(flight_id: int):
     if flight_id > MAX_ID:
         abort(404)
     flight = db.get_or_404(Flight, flight_id)
+    if must_verify(current_user):
+        flash("Confirm your email address before booking. We sent you a link.", "info")
+        return redirect(url_for("auth.account") + "#verify")
 
     status, message = 200, None
     name_values, name_errors = {}, {}

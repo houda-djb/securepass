@@ -9,13 +9,14 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.auth import bp
-from app.auth import totp
+from app.auth import devices, totp
 from app.auth.account_forms import ChangePasswordForm, ForgotPasswordForm, ResetPasswordForm
 from app.auth.reset import send_reset_email, user_for_token
+from app.auth.verify import send_verification, user_for_token as verify_user_for_token
 from app.auth.forms import LoginForm, RegisterForm
 from app.auth.passwords import password_problems
 from app.extensions import db, limiter
-from app.models import AuditLog, Booking, RecoveryCode, User, utcnow
+from app.models import AuditLog, Booking, RecoveryCode, User, UserSession, utcnow
 from app.security import audit, is_safe_next
 
 # Used when the email is unknown, so "unknown email" takes as long as "wrong password"
@@ -52,7 +53,8 @@ def register():
                 form.email.errors = [*form.email.errors, "An account with this email already exists."]
             else:
                 audit("register", user)
-                flash("Account created. You can log in now.", "success")
+                send_verification(user)
+                flash("Account created. We sent a confirmation link to your email. You can log in now.", "success")
                 return redirect(url_for("auth.login"))
     return render_template("auth/register.html", form=form), status
 
@@ -131,6 +133,7 @@ def _finish_login(user: User, detail: str = "") -> None:
     session.clear()  # start a fresh session on login (prevents session fixation)
     login_user(user)
     session.permanent = True
+    devices.register_device(user)
     audit("login_success", user, detail)
 
 
@@ -172,6 +175,9 @@ EVENT_LABELS = {
     "cancel_burst_blocked": "Cancellation blocked: too many in a short time",
     "cancel_burst_alert": "Several bookings cancelled in a few minutes",
     "sessions_revoked": "Logged out of every other device",
+    "device_revoked": "One device signed out",
+    "email_verified": "Email address confirmed",
+    "verification_sent": "Confirmation email sent",
     "sessions_revoke_refused": "Log out everywhere refused (wrong password)",
     "cancel_ip_blocked": "Cancellation blocked: too many from one network address",
     "cancel_site_blocked": "Cancellations paused: unusual activity on the whole site",
@@ -193,6 +199,8 @@ def _account_context():
         .order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).limit(HISTORY_LENGTH)
     ).all()
     return {
+        "devices": [(row, devices.label(row.user_agent)) for row in devices.active_devices(current_user)],
+        "current_sid": session.get("sid"),
         "recovery_left": _recovery_left(current_user) if current_user.totp_enabled else 0,
         "stats": {"total": len(bookings), "upcoming": sum(1 for b in confirmed if b.flight.departs_at > now),
                   "cancelled": len(bookings) - len(confirmed)},
@@ -247,9 +255,57 @@ def change_password():
     session.clear()  # a fresh session after a credential change (same idea as at login)
     login_user(user)
     session.permanent = True
+    devices.revoke_all(user.id)
+    devices.register_device(user)
     audit("password_changed", user)
     flash("Your password has been changed.", "success")
     return redirect(url_for("auth.account"))
+
+
+@bp.route("/account/devices/<int:device_id>/revoke", methods=["POST"])
+@login_required
+@limiter.limit("30 per hour", methods=["POST"])
+def revoke_device(device_id: int):
+    """Sign out one other device from the list."""
+    row = db.session.scalar(select(UserSession).where(UserSession.id == device_id,
+                                                      UserSession.user_id == current_user.id))
+    if row is None or row.revoked_at is not None:
+        flash("That device is not signed in any more.", "info")
+    elif row.sid == session.get("sid"):
+        flash("This is the device you are using. Use Log out instead.", "info")
+    else:
+        row.revoked_at = utcnow()
+        audit("device_revoked", current_user, devices.label(row.user_agent))
+        flash("That device was signed out.", "success")
+    return redirect(url_for("auth.account") + "#sessions")
+
+
+@bp.route("/verify-email/<token>")
+@limiter.limit("30 per hour")
+def verify_email(token: str):
+    user = verify_user_for_token(token[:500])
+    if user is None:
+        flash("That confirmation link is not valid any more. Sign in and ask for a new one.", "error")
+    else:
+        if not user.email_verified:
+            user.email_verified_at = utcnow()
+            audit("email_verified", user)
+        flash("Your email address is confirmed.", "success")
+    return redirect(url_for("auth.account") if current_user.is_authenticated else url_for("auth.login"))
+
+
+@bp.route("/account/verify/resend", methods=["POST"])
+@login_required
+@limiter.limit("3 per hour", methods=["POST"])
+def resend_verification():
+    user = current_user._get_current_object()
+    if user.email_verified:
+        flash("Your email address is already confirmed.", "info")
+    else:
+        send_verification(user)
+        audit("verification_sent", user)
+        flash("We sent a new confirmation link to your email.", "success")
+    return redirect(url_for("auth.account") + "#verify")
 
 
 @bp.route("/account/sessions/revoke", methods=["POST"])
@@ -267,6 +323,8 @@ def revoke_sessions():
     session.clear()
     login_user(user)  # this device stays signed in with the new number
     session.permanent = True
+    devices.revoke_all(user.id)
+    devices.register_device(user)
     audit("sessions_revoked", user)
     flash("You were logged out of every other device. This one stays signed in.", "success")
     return redirect(url_for("auth.account"))
@@ -489,6 +547,7 @@ def reset_password(token: str):
             user.failed_logins = 0
             user.locked_until = None
             user.session_epoch = (user.session_epoch or 0) + 1  # a reset logs out every device
+            devices.revoke_all(user.id)
             audit("password_reset", user)  # also saves the change above
             flash("Your password was changed. You can log in now.", "success")
             return redirect(url_for("auth.login"))

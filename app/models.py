@@ -136,6 +136,8 @@ class User(UserMixin, db.Model):
     # Raised to log the account out of every device at once (Phase 31). It is part of the
     # session's user id, so a session made before the change no longer matches.
     session_epoch = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    # Set when the owner opens the link we email them (Phase 32). Empty means not confirmed yet.
+    email_verified_at = db.Column(db.DateTime, nullable=True)
 
     __table_args__ = (db.CheckConstraint("role IN ('user', 'admin')", name="ck_user_role"),)
 
@@ -145,6 +147,10 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def email_verified(self) -> bool:
+        return self.email_verified_at is not None
 
     def get_id(self) -> str:
         return f"{self.id}:{self.session_epoch or 0}"
@@ -169,6 +175,22 @@ class AuditLog(db.Model):
     ip = db.Column(db.String(45), nullable=False, default="")
     detail = db.Column(db.String(200), nullable=False, default="")
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+
+
+class UserSession(db.Model):
+    """One signed-in device (Phase 32). The browser holds only the random `sid`; revoking a row
+    logs that one device out without touching the others."""
+
+    __tablename__ = "user_sessions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    sid = db.Column(db.String(64), unique=True, nullable=False)
+    ip = db.Column(db.String(64), nullable=False, default="")
+    user_agent = db.Column(db.String(200), nullable=False, default="")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    last_seen_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    revoked_at = db.Column(db.DateTime, nullable=True)
 
 
 class SeatHold(db.Model):
